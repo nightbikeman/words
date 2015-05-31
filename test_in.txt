@@ -1,0 +1,13 @@
+animal,ferret,stout,weasel,farm animal,african animal,pet,wild animal
+african animal,hippo,alligator,tiger,giraffe,rhino,hippo
+pet,dog,cat,rabbit,mouse,chinchilla
+farm animal,pig,hen,sheep,goat,pig,cow,goat
+wild animal,badger,hippo,alligator,tiger,giraffe,rhino,hippo
+british animal,badger,fox,hen
+computer,keyboard,mouse,screen,disk,usb,firewire
+firewire,telly,video
+camera,picture,image,jpeg,gif,google
+google,web,advertise,email
+advertise,itv,sky,telly
+yahoo,bing,google,alta vista,duck duck go
+
