@@ -11,7 +11,7 @@ struct entity
 
 };
 
-void add_ent(struct entity **ents,int *no,char *name)
+static void add_ent(struct entity **ents,int *no,char *name)
 {
 
         (*no)++;
@@ -29,7 +29,7 @@ void add_ent(struct entity **ents,int *no,char *name)
         e->links=(long *)0;
 }
 
-void add_link(struct entity *e,int focal_root)
+static void add_link(struct entity *e,int focal_root)
 {
         void *temp=0;
         e->num_links++;
@@ -42,7 +42,7 @@ void add_link(struct entity *e,int focal_root)
         e->links[e->num_links]=focal_root;
 }
 
-int find_entity(struct entity *e,int max,char *word)
+static int find_entity(struct entity *e,int max,char *word)
 {
         int i=0; 
         while (i<=max) {
@@ -56,8 +56,7 @@ int find_entity(struct entity *e,int max,char *word)
 
 }
 int main(int argc,char *argv[]){
-    char line[10000];
-    char sub_word[100];
+    char line[1000000];
     FILE *in, *out;
     int line_length;
     int total_num_root_entities;
@@ -67,8 +66,7 @@ int main(int argc,char *argv[]){
     int index;
     int ret;
     int roots,subs;
-    int json=0;
-        int pos, len;
+    int json=1;
 
 struct entity *entities=0;
 
@@ -79,68 +77,56 @@ struct entity *entities=0;
 
     num_entities= -1;
     while(1==fscanf(in, "%[^\n]%n\n", line, &line_length)){//read one line
-        char word[100];
-        unsigned long focal_root_entity=0;  //Used when the Root Entity alredaay exists
-        for(pos=0;pos < line_length-1 && 1==sscanf(line + pos, "%[^,]%*[,]%n", word, &len);pos+=len)
+        char *word;
+        unsigned long focal_root_entity=0;  //Used when the Root Entity already exists
+        char *ptr;
         {
-            int i;
+            char *root=strtok_r(line,",",&ptr);
+            int i=0;
 
-            printf("XX %s\n",line + pos);
-            if (!json)       printf("The word is '%s' %d %d\n",word,pos,len);
-            if (pos==0) {
+            // First check whether the entry already exists:
+            i=find_entity(entities,num_entities,root); 
 
-                // First check whether the entry already exists:
-                i=find_entity(entities,num_entities,word); 
+            if (i > num_entities) {
 
-                if (i > num_entities) {
+                    // Initialise this Root Entity:
+                    add_ent(&entities,&num_entities,root);
 
-                        // Initialise this Root Entity:
-                        add_ent(&entities,&num_entities,word);
+                    fprintf(out, "%s\n", root);
 
-                        fprintf(out, "%s\n", word);
+                    focal_root_entity=num_entities;
+                    total_num_root_entities++;
+            }
+            else { //  If the root entity has been found:
 
-                        focal_root_entity=num_entities;
-                        total_num_root_entities++;
-                }
-                else { //  If the root entity has been found:
+                    focal_root_entity=i;
+            }    // if (found == 0)
+        }
 
-                        focal_root_entity=i;
-                }    // if (found == 0)
+        for(;word=strtok_r(NULL,",",&ptr);) 
+        {
+            unsigned long sub_entity=0;
 
-            }        // if pos == 0
+            //First check whether the entity already exists :
+            sub_entity=find_entity(entities,num_entities,word);
+            if (sub_entity > num_entities) {
 
-            else {   // if pos !=0
+                    //Initialise this Sub Entity:
+                    add_ent(&entities,&num_entities,word);
 
-                    unsigned long sub_entity=0;
-                    //If this is a Sub Entity:
+                    total_num_sub_entities++;
+                    sub_entity=num_entities;
 
-                    //First check whether the entity already exists :
-                    sub_entity=find_entity(entities,num_entities,word);
-                    if (sub_entity > num_entities) {
+            } //End found==0
 
-                            //Initialise this Sub Entity:
-                            add_ent(&entities,&num_entities,word);
+            // Now link the Sub Entity to the focal_root_entity using the index of the entity arrays :
+            add_link(&entities[focal_root_entity],sub_entity);
+            add_link(&entities[sub_entity],focal_root_entity);
 
-                            total_num_sub_entities++;
-                            sub_entity=num_entities;
-
-                    } //End found==0
-
-                    // Now link the Sub Entity to the focal_root_entity using the index of the entity arrays :
-                    add_link(&entities[focal_root_entity],sub_entity);
-                    add_link(&entities[sub_entity],focal_root_entity);
-
-                    // Echo the word to the o/p file :
-                    fprintf(out, "%s\n", word);
-
-               } // End pos!=0
+            // Echo the word to the o/p file :
+            fprintf(out, "%s\n", word);
 
         } // End for pos
-
-
-// Move to Next Root Entity
-    if (!json)       printf("The word is '%s' %d %d\n",word,pos,len);
-
     }
     fclose(out);
     fclose(in);

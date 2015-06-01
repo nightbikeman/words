@@ -7,7 +7,7 @@ british animal,badger,fox,hen
 computer,keyboard,mouse,screen,disk,usb,firewire
 firewire,telly,video
 camera,picture,image,jpeg,gif,google
-google,web,advertise,email
-advertise,itv,sky,telly
-yahoo,bing,google,alta vista,duck duck go
+google,web,advertising,email
+advertising,itv,sky,telly
+search engines,yahoo,bing,google,alta vista,duck duck go
 

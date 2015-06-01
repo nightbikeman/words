@@ -1,2 +1,3 @@
 pet,dog,cat,rabbit,mouse,chinchilla
 farm animal,hen,sheep,pig,cow,goat
+animal,pet,farm animal
