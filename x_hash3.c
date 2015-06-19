@@ -8,7 +8,7 @@
 #include "dhash.h"
 #include "words.h"
 
-typedef struct truths_impl
+typedef struct words_impl
 {
     hash_table_t *table;
     int total_num_root_entities;
@@ -146,7 +146,6 @@ static entity *find_entity(char *word,hash_table_t *table)
     return e;
 
 }
-
 WORDS_STAT load(WORDS *w,const char *file)
 {
     char line[1000000];

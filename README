@@ -1,2 +1,4 @@
 This project is an experiment in fetching a retrieving words and associated words
 
+To compile and run
+make clean all test
