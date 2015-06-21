@@ -2,6 +2,8 @@
 #include <malloc.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <omp.h>
 
 #include "dhash.h"
 #include "words.h"
@@ -20,6 +22,53 @@ typedef struct entity
     int num_links;                 //Number of links to Sub Entities for this Entity
     struct entity **links;                   //A dymanic array of long pointers to other Root Entities
 } entity;
+
+int create_in_txt(int num_lines, char *file)
+{
+    int n ;
+    int i,j;
+    char buf[100];
+    FILE *out;
+
+    void mkrndstr_ipa(size_t length, char *randomString) { // const size_t length, supra
+
+    	static char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
+	int n;
+
+	if (length) {
+    		if (randomString) {
+        		int l = (int) (sizeof(charset) -1);
+        		for (n = 0;n < length;n++) {
+            			int key = rand() % l;          // per-iteration instantiation
+            			randomString[n] = charset[key];
+        		}
+
+        		randomString[length] = '\0';
+   		 }
+	}
+}
+
+    out = fopen(file,"wb");
+    if (out == NULL)  
+	exit(1);
+
+    printf("Writing %ld lines of O/P into %s \n",num_lines,file);
+
+    for (i=0;i<num_lines;i++) {
+       n=rand()%60000;
+
+       for (j=0;j<(rand()%40 + 10);j++) {
+
+                mkrndstr_ipa((rand()%4 + rand()%8) + rand()%8 + rand()%8 +1,buf);
+                fprintf(out,"%s,", buf);
+        }
+                mkrndstr_ipa((rand()%4 + rand()%8) + rand()%8 + rand()%8 +1,buf);
+        fprintf(out,"%s\n", buf);
+    }
+    fclose(out);
+
+    return 0;
+}
 
 static void delete_callback(hash_entry_t *entry,
                             hash_destroy_enum type,
@@ -106,28 +155,36 @@ WORDS_STAT load(WORDS *w,const char *file)
     int index;
     int ret;
     int roots;
-    int json=1;
+    int lines=0;
+    int json=0;
+    char buffer[26];
+    struct tm* tm_info;
+    time_t timer;
     struct entity *entities=0;
 
-    WORDS_IMPL *words;
-    words=malloc(sizeof(*words));
-    if ( words == NULL )
+    WORDS_IMPL *truths;
+    truths=malloc(sizeof(*truths));
+    if ( truths == NULL )
     {
-        perror("failed to create words structure");
+        perror("failed to create truths structure");
         return WORDS_FAIL;
     }
 
     /* Create a hash table */
     int error;
-    error = hash_create(100000 , &words->table, delete_callback,  NULL);
+    error = hash_create(INITIAL_HASH , &truths->table, delete_callback,  NULL);
     if (error != HASH_SUCCESS) {
         fprintf(stderr, "cannot create hash table (%s)\n", hash_error_string(error));
         return error;
     }
 
     in  = fopen(file, "r");
+    if (in == NULL)  {
+	printf("Input file %s not found \n");
+	exit(1);
+    }
 
-    words->num_entities= -1;
+    truths->num_entities= -1;
     while(1==fscanf(in, "%[^\n]%n\n", line, &line_length)){//read one line
         char *word;
         entity *focal_root_entity=NULL;  //Used when the Root Entity already exists
@@ -135,15 +192,24 @@ WORDS_STAT load(WORDS *w,const char *file)
         {
             char *root=strtok_r(line,",",&ptr);
             entity *i=NULL;
+            lines++;
+
+	    if ( ! json)
+                    if ((lines % STAGE) == 0) {
+                        time(&timer);
+                        tm_info = localtime(&timer);
+                        strftime(buffer, 26, "%Y:%m:%d %H:%M:%S", tm_info);
+                        printf("%s: Total lines ingested are %d - latest root entry is '%s'\n",buffer,lines,root);
+                    }
 
             // First check whether the entry already exists:
-            i=find_entity(root,words->table); 
+            i=find_entity(root,truths->table); 
 
             if (i == NULL ) 
             {
                     // Initialise this Root Entity:
-                    focal_root_entity=add_ent(root,words->table);
-                    words->total_num_root_entities++;
+                    focal_root_entity=add_ent(root,truths->table);
+                    truths->total_num_root_entities++;
             }
             else 
             { 
@@ -156,14 +222,14 @@ WORDS_STAT load(WORDS *w,const char *file)
         {
             entity *sub_entity;
 
-            words->num_entities++;
+            truths->num_entities++;
             //First check whether the entity already exists :
-            sub_entity=find_entity(word,words->table);
+            sub_entity=find_entity(word,truths->table);
             if (sub_entity == NULL) {
 
                     //Initialise this Sub Entity:
-                    sub_entity=add_ent(word,words->table);
-                    words->total_num_sub_entities++;
+                    sub_entity=add_ent(word,truths->table);
+                    truths->total_num_sub_entities++;
             } 
 
             // Now link the Sub Entity to the focal_root_entity using the index of the entity arrays :
@@ -175,74 +241,264 @@ WORDS_STAT load(WORDS *w,const char *file)
     fclose(in);
 
 
-    *w=words;
+    *w=truths;
     return WORDS_SUCCESS;
 }
 
 WORDS_STAT dump_json(const WORDS w)
 {
-        WORDS_IMPL *words;
+	FILE *out;
+        WORDS_IMPL *truths;
         // make the pointer non-opaque
-        words=(WORDS_IMPL *)w;
+        truths=(WORDS_IMPL *)w;
 
         /* Visit each entry using iterator object */
         struct hash_iter_context_t *iter;
-        iter = new_hash_iter_context(words->table);
+        iter = new_hash_iter_context(truths->table);
         hash_entry_t *entry;
-        int i=0;
+  	int i=0;
+
+	out = fopen("entities.json","wb");
+
         while ((entry = iter->next(iter)) != NULL) {
             struct entity *data = (struct entity *) entry->value.ptr;
             int j;
 
-            for (j=0; j<=data->num_links;j++)  {
+	    if (data->name,data->num_links > 0) {
+            	for (j=0; j<=data->num_links;j++)  {
                     if ( i > 0 ) 
-                        printf(",");
-                    printf ("{\n   \"source\" : \"%s\",\n   \"target\" : \"%s\",\n   \"type\" : \"suit\"\n}\n",data->name,data->links[j]->name);
-                    i=1;
+                        fprintf(out,",");
+                    fprintf (out,"{\n   \"source\" : \"%s\",\n   \"target\" : \"%s\",\n   \"type\" : \"suit\"\n}\n",data->name,data->links[j]->name);
+		    i=1;
+		}
             }
         }
         free(iter);
-     printf ("]\n");
+        fprintf (out,"]\n");
+
+	fclose(out);
 
     return(WORDS_SUCCESS);
 }
 
-WORDS_STAT dump(const WORDS w)
+WORDS_STAT dump_formatted(const WORDS w)
 {
 
-
-    int subs=0;
-    int roots=0;
-        WORDS_IMPL *words;
+        int j;
+	FILE *out;
+        WORDS_IMPL *truths;
         // make the pointer non-opaque
-        words=(WORDS_IMPL *)w;
+        truths=(WORDS_IMPL *)w;
 
         /* Visit each entry using iterator object */
         struct hash_iter_context_t *iter;
-        iter = new_hash_iter_context(words->table);
+        iter = new_hash_iter_context(truths->table);
         hash_entry_t *entry;
-        int i=0;
+
+	out = fopen("entities.out","wb");
+
         while ((entry = iter->next(iter)) != NULL) {
             struct entity *data = (struct entity *) entry->value.ptr;
-            int j;
-            roots++;
 
-            for (j=0; j<=data->num_links;j++)  {
-                    printf("Sub Entity is %s\n",data->links[j]->name);
-                    subs++;
-                    i=1;
+	    if (data->name,data->num_links > 0) {
+   	    	fprintf(out,"\nRoot Entity is '%s' and the number of links are %d\n",data->name,data->num_links);
+
+                for (j=0; j<=data->num_links;j++) 
+                    fprintf(out,"Sub Entity is '%s'\n",data->links[j]->name);
             }
         }
         free(iter);
-    printf("The number of root entities found were %d and the number of subs found were %d\n",roots,subs);
-    printf("The total number of Entities are %d\n",words->num_entities);
-    printf("The total number of Root Entities are %d\n",words->total_num_root_entities);
-    printf("The total number of Sub Entities are %d\n",words->total_num_sub_entities);
 
+        fprintf(out,"\nThe total number of Root Entities are %d\n",truths->total_num_root_entities);
+        fprintf(out,"The total number of Sub Entities are %d\n",truths->total_num_sub_entities);
 
-
-
-
+	fclose(out);
 
 return(WORDS_SUCCESS);
 }
+
+WORDS_STAT dump_txt(const WORDS w)
+{
+
+        int j;
+	FILE *out;
+        WORDS_IMPL *truths;
+        // make the pointer non-opaque
+        truths=(WORDS_IMPL *)w;
+
+        /* Visit each entry using iterator object */
+        struct hash_iter_context_t *iter;
+        iter = new_hash_iter_context(truths->table);
+        hash_entry_t *entry;
+
+	out = fopen("entities.txt","wb");
+
+        while ((entry = iter->next(iter)) != NULL) {
+            struct entity *data = (struct entity *) entry->value.ptr;
+
+	    if (data->name,data->num_links > 0) {
+   	    	fprintf(out,"%s",data->name,data->num_links);
+
+                for (j=0; j<=data->num_links;j++) 
+                    fprintf(out,",%s",data->links[j]->name);
+
+		fprintf(out,"\n");
+            }
+        }
+        free(iter);
+
+	fclose(out);
+
+return(WORDS_SUCCESS);
+}
+
+WORDS_STAT word_search(const WORDS w,long nth_order,long quick, char *entity1,char *entity2)
+{
+
+        int j,k;
+        int found=0;
+	long nthreads,tid;
+	WORDS_IMPL *truths;
+        // make the pointer non-opaque
+        truths=(WORDS_IMPL *)w;
+        hash_entry_t *entry;
+        entity *found_entity1, *found_entity2, *found_entity3;
+
+        tid = omp_get_thread_num();
+   //   printf("Hello from thread = %d\n", tid);
+
+        if (tid == 0) {
+                nthreads = omp_get_num_threads();
+   //           printf("Number of threads = %d\n", nthreads);
+        }
+
+
+	switch(nth_order){
+    		case 1  :   // Perform 1st order search
+			    // Entity1 & Entity2 are supplied.  Does Entity2 exist within Entity1 and vice versa ? 
+			    // A-bomb was found in => abandoned
+			    //
+
+			found_entity1=find_entity(entity1,truths->table);
+        		if (found_entity1 != NULL) {
+				if(VERBOSE)printf("Found Entity %s\n",entity1);
+
+				found_entity2=find_entity(entity2,truths->table);
+        			if (found_entity2 != NULL) {
+					if(VERBOSE)printf("Found Entity %s\n",entity2);
+
+				// Scan each link in Enity1 for Entity2->name  &&
+				// Scan each link in Enity2 for Entity1->name
+				//
+	    				if ((found_entity1->name,found_entity1->num_links > 0) || (found_entity2->name,found_entity2->num_links > 0)) {
+   	    		 //			printf("Entity1: Root is %s and num_links are %d\n",found_entity1->name,found_entity1->num_links);
+   	    		 //			printf("Entity2: Root is %s and num_links are %d\n",found_entity2->name,found_entity2->num_links);
+
+						for (j=0;j<found_entity1->num_links;j++) {
+				//			printf("%d %s %s \n",j,found_entity1->links[j]->name, found_entity2->name);
+							if (strcmp(found_entity1->links[j]->name, found_entity2->name) == 0) {
+								printf("#1# Thread id(%d) %s was found in => %s \n", tid,found_entity1->links[j]->name, found_entity1->name);
+								found++;
+								if(quick)break;     // Only scan for one 
+							}
+ 						} 
+
+						for (j=0;j<found_entity2->num_links;j++) { 
+				//			printf("%d %s %s \n",j,found_entity2->links[j]->name, found_entity1->name);
+							if (strcmp(found_entity2->links[j]->name, found_entity1->name) == 0) {
+								printf("#1# Thread id(%d) %s was found in => %s \n", tid,found_entity2->links[j]->name, found_entity2->name);
+								found++;
+								if(quick)break;     // Only scan for one 
+							}
+						}   
+
+					} else
+						if(VERBOSE)printf("This is a Sub entry with no links\n");	
+
+				} else {	
+					if(VERBOSE)printf("Entity %s was not found \n",entity2);
+					return(0);  // Entity 2 not found
+				}
+
+			} else {
+				 
+				if(VERBOSE)printf("Entity %s was not found \n",entity1);
+				return(0);    // Entity 1 not found
+			}
+
+       			break; 
+
+    		case 2  :  // Perform 2nd order search
+			   // If both entities share the same sub entity or root name then it is returned:
+			   // A-bomb => bob was found in abandoned => bob
+			   //
+			   
+			found_entity1=find_entity(entity1,truths->table);
+        		if (found_entity1 != NULL) {
+				if(VERBOSE)printf("Found Entity %s\n",entity1);
+
+				found_entity2=find_entity(entity2,truths->table);
+        			if (found_entity2 != NULL) {
+					if(VERBOSE)printf("Found Entity %s\n",entity2);
+
+				// Scan each link in Enity1 for Entity2->link[k]->name  &&
+				// Scan each link in Enity2 for Entity1->link[j]->name
+				//
+	    				if ((found_entity1->name,found_entity1->num_links > 0) && (found_entity2->name,found_entity2->num_links > 0)) {
+   	    		//			if(VERBOSE)printf("Entity1: Root is %s and num_links are %d\n",found_entity1->name,found_entity1->num_links);
+   	    		//			if(VERBOSE)printf("Entity2: Root is %s and num_links are %d\n",found_entity2->name,found_entity2->num_links);
+
+						for (j=0;j<found_entity1->num_links;j++) {
+				//			printf("%d,%d %s %s \n",j,k,found_entity1->links[j]->name, found_entity2->name);
+							if (strcmp(found_entity1->links[j]->name, found_entity2->name) == 0) {
+								printf("*2* %s was found in => %s \n", found_entity1->links[j]->name, found_entity1->name);
+								found++;
+								if(quick)break;     // Only scan for one 
+							}
+
+							for (k=0;k<found_entity2->num_links;k++) {
+				//				printf("%d,%d %s %s \n",j,k,found_entity1->links[j]->name, found_entity2->links[k]->name);
+								if (strcmp(found_entity1->links[j]->name, found_entity2->links[k]->name) == 0) {
+									printf("*2* Thread id(%d) %s was found common to Entities %s and %s\n", tid,found_entity2->links[k]->name, found_entity1->name, found_entity2->name);
+									found++;
+									if(quick)break;     // Only scan for one 
+								}
+							}
+
+						}
+
+						for (k=0;k<found_entity2->num_links;k++) {
+				//			printf("%d,%d %s %s \n",j,k,found_entity1->name, found_entity2->links[k]->name);
+							if (strcmp(found_entity1->name, found_entity2->links[k]->name) == 0) {
+								printf("*2* Thread id(%d) %s was found in %s\n", tid,found_entity2->links[k]->name, found_entity2->name);
+								found++;
+								if(quick)break;     // Only scan for one 
+							}
+						}
+
+
+					} else
+						if(VERBOSE)printf("One of the Sub Entities has no links\n");	
+
+				} else {	
+					if(VERBOSE)printf("Entity %s was not found \n",entity2);
+					return(0);  // Entity 2 not found
+				}
+
+			} else {
+				 
+				if(VERBOSE)printf("Entity %s was not found \n",entity1);
+				return(0);    // Entity 1 not found
+			}
+
+       			break; 
+  
+    		default : 
+			printf("Invalid search depth %d\n",nth_order);
+       			return(0);
+	}
+
+       	return(found);
+}
+
+

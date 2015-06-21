@@ -10,19 +10,22 @@ x_hash: x_hash.o
 x_hash2: LDFLAGS=-L. -lhiredis -lxhash2 
 x_hash2: run_words.o
 
-x_hash3: LDFLAGS=-L. -lxhash3  -ldhash
+x_hash3: LDFLAGS=-L. -lxhash3  -ldhash -fopenmp
 x_hash3: run_words.o 
 
-x_hash3.o x_hash2.o :CPPFLAGS=-g -fPIC 
+x_hash3.o:CPPFLAGS=-g -fPIC -fopenmp
+x_hash3.o:x_hash3.c
 
-libxhash2.so: LDFLAGS=-shared 
-libxhash2.so: OBJECTS=x_hash2.o
+run_words.o:CPPFLAGS=-g -fopenmp
 
 libxhash3.so: LDFLAGS=-shared  
 libxhash3.so: OBJECTS=x_hash3.o
 
 libxhash3.so libxhash2.so: $(OBJECTS)
 	    $(CC) $(CFLAGS) $(OBJECTS) -o $@ $(LDFLAGS)
+
+libxhash3.so : $(OBJECTS)
+	    $(CC) $(CFLAGS) $(OBJECTS) -o $@ $(LDFLAGS) 
 
 test: x_hash3
 	@echo HASH version 2
