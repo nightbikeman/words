@@ -8,7 +8,7 @@
 #include "dhash.h"
 #include "words.h"
 
-typedef struct words_impl
+typedef struct truths_impl
 {
     hash_table_t *table;
     int total_num_root_entities;
@@ -146,6 +146,7 @@ static entity *find_entity(char *word,hash_table_t *table)
     return e;
 
 }
+
 WORDS_STAT load(WORDS *w,const char *file)
 {
     char line[1000000];
@@ -240,8 +241,10 @@ WORDS_STAT load(WORDS *w,const char *file)
     }
     fclose(in);
 
+    printf("Number of lines read were %d\n",lines);
 
     *w=truths;
+
     return WORDS_SUCCESS;
 }
 
@@ -258,7 +261,7 @@ WORDS_STAT dump_json(const WORDS w)
         hash_entry_t *entry;
   	int i=0;
 
-	out = fopen("entities.json","wb");
+	out = fopen("data/entities.json","wb");
 
         while ((entry = iter->next(iter)) != NULL) {
             struct entity *data = (struct entity *) entry->value.ptr;
@@ -295,7 +298,7 @@ WORDS_STAT dump_formatted(const WORDS w)
         iter = new_hash_iter_context(truths->table);
         hash_entry_t *entry;
 
-	out = fopen("entities.out","wb");
+	out = fopen("data/entities.out","wb");
 
         while ((entry = iter->next(iter)) != NULL) {
             struct entity *data = (struct entity *) entry->value.ptr;
@@ -331,7 +334,7 @@ WORDS_STAT dump_txt(const WORDS w)
         iter = new_hash_iter_context(truths->table);
         hash_entry_t *entry;
 
-	out = fopen("entities.txt","wb");
+	out = fopen("data/entities.txt","wb");
 
         while ((entry = iter->next(iter)) != NULL) {
             struct entity *data = (struct entity *) entry->value.ptr;
@@ -502,3 +505,14 @@ WORDS_STAT word_search(const WORDS w,long nth_order,long quick, char *entity1,ch
 }
 
 
+WORDS_STAT find_word(const WORDS w, char *word)
+{
+        WORDS_IMPL *truths;
+        // make the pointer non-opaque
+        truths=(WORDS_IMPL *)w;
+
+        /* Visit each entry using iterator object */
+	entity *e =find_entity(word,truths->table);
+
+	return (e != NULL) ? WORDS_SUCCESS : WORDS_FAIL;
+}
