@@ -1,6 +1,5 @@
 .PHONY: clean
 
-# a test change
 
 all: x_hash3.o libxhash3.so x_hash3 
 
@@ -29,9 +28,9 @@ libxhash3.so : $(OBJECTS)
 	    $(CC) $(CFLAGS) $(OBJECTS) -o $@ $(LDFLAGS) 
 
 test: x_hash3
-	time LD_LIBRARY_PATH=. ./x_hash3 in.txt 
-	time LD_LIBRARY_PATH=. ./x_hash3 -b 100  4
-	time LD_LIBRARY_PATH=. ./x_hash3 -c 100 test-txt
-	time LD_LIBRARY_PATH=. ./x_hash3 -o input_file
-	time LD_LIBRARY_PATH=. ./x_hash3 -s 2 flower tree 
+	LD_LIBRARY_PATH=. time ./x_hash3 in.txt 
+	LD_LIBRARY_PATH=. time ./x_hash3 -b 100  4
+	LD_LIBRARY_PATH=. time ./x_hash3 -c 100 test-txt
+	LD_LIBRARY_PATH=. time ./x_hash3 -o input_file
+	LD_LIBRARY_PATH=. time ./x_hash3 -s 2 flower tree 
 
