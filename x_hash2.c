@@ -5,7 +5,17 @@
 #define _GNU_SOURCE         /* See feature_test_macros(7) */
 #define __USE_GNU
 #include <search.h>
+#include "words.h"
 
+
+typedef struct words_impl
+{
+    struct entity *entities;
+    struct hsearch_data htab;
+    int total_num_root_entities;
+    int total_num_sub_entities;
+    long num_entities;
+} WORDS_IMPL;
 
 struct entity
 {
@@ -73,9 +83,11 @@ static long find_entity(char *word,struct hsearch_data *htab,long max)
         return i;
 
 }
-int main(int argc,char *argv[]){
+
+WORDS_STAT load(WORDS *w,const char *file)
+{
     char line[1000000];
-    FILE *in, *out;
+    FILE *in;
     int line_length;
     int total_num_root_entities;
     int total_num_sub_entities;
@@ -85,22 +97,25 @@ int main(int argc,char *argv[]){
     int ret;
     int roots,subs;
     int json=1;
-    struct entity *entities=0;
-    struct hsearch_data htab;
 
-    if (hcreate_r(200000, &htab) == 0)
+    WORDS_IMPL *words;
+    words=malloc(sizeof(*words));
+    if ( words == NULL )
+    {
+        perror("failed to create words structure");
+        return WORDS_FAIL;
+    }
+
+    if (hcreate_r(200000, &words->htab) == 0)
     {
         perror("Could not create hash table");
         exit(2);
     }
 
+    in  = fopen(file, "r");
 
+    words->num_entities= -1;
 
-    in  = fopen("in.txt", "r");
-    out = fopen("out.txt", "w");
-
-
-    num_entities= -1;
     while(1==fscanf(in, "%[^\n]%n\n", line, &line_length)){//read one line
         char *word;
         unsigned long focal_root_entity=0;  //Used when the Root Entity already exists
@@ -110,17 +125,15 @@ int main(int argc,char *argv[]){
             int i=0;
 
             // First check whether the entry already exists:
-            i=find_entity(root,&htab,num_entities); 
+            i=find_entity(root,&words->htab,words->num_entities); 
 
-            if (i > num_entities ) {
+            if (i > words->num_entities ) {
 
                     // Initialise this Root Entity:
-                    add_ent(&entities,&num_entities,root,&htab);
+                    add_ent(&words->entities,&words->num_entities,root,&words->htab);
 
-                    fprintf(out, "%s\n", root);
-
-                    focal_root_entity=num_entities;
-                    total_num_root_entities++;
+                    focal_root_entity=words->num_entities;
+                    words->total_num_root_entities++;
             }
             else { //  If the root entity has been found:
 
@@ -133,49 +146,47 @@ int main(int argc,char *argv[]){
             unsigned long sub_entity=0;
 
             //First check whether the entity already exists :
-            sub_entity=find_entity(word,&htab,num_entities);
-            if (sub_entity > num_entities ) {
+            sub_entity=find_entity(word,&words->htab,words->num_entities);
+            if (sub_entity > words->num_entities ) {
 
                     //Initialise this Sub Entity:
-                    add_ent(&entities,&num_entities,word,&htab);
+                    add_ent(&words->entities,&words->num_entities,word,&words->htab);
 
-                    total_num_sub_entities++;
+                    words->total_num_sub_entities++;
                     sub_entity=num_entities;
 
             } //End found==0
 
             // Now link the Sub Entity to the focal_root_entity using the index of the entity arrays :
-            add_link(&entities[focal_root_entity],sub_entity);
-            add_link(&entities[sub_entity],focal_root_entity);
-
-            // Echo the word to the o/p file :
-            fprintf(out, "%s\n", word);
+            add_link(&words->entities[focal_root_entity],sub_entity);
+            add_link(&words->entities[sub_entity],focal_root_entity);
 
         } // End for pos
     }
-    fclose(out);
     fclose(in);
+    
+    *w=words;
+}
 
+WORDS_STAT dump_json(const WORDS w)
+{
+        WORDS_IMPL *words;
+        // make the pointer non-opaque
+        words=(WORDS_IMPL *)w;
 
-// Now print out the entire set of Entities:
-
-
-
-    if ( json ) printf("[\n");
+    printf("[\n");
     {
         int i;
-        roots=subs=0;
-        for (i=0;i<=num_entities;i++) 
+        int roots=0;
+        int subs=0;
+        for (i=0;i<=words->num_entities;i++) 
         {
             int j;
-                if (entities[i].num_links >= 0) {
-                        if ( ! json ) printf("Root Entity '%s' discovered with %d sub links\n", entities[i].entity_name,entities[i].num_links);
+                if (words->entities[i].num_links >= 0) {
                         roots++;
-
-                        for (j=0; j<=entities[i].num_links;j++)  {
-                                if ((( i > 0 )||(j>0)) && (json)) printf(",");
-                                if ( ! json ) printf("Sub Entity is %s\n",entities[entities[i].links[j]].entity_name);
-                                if ( json ) printf ("{\n   \"source\" : \"%s\",\n   \"target\" : \"%s\",\n   \"type\" : \"suit\"\n}\n",entities[i].entity_name,entities[entities[i].links[j]].entity_name);
+                        for (j=0; j<=words->entities[i].num_links;j++)  {
+                                if ((( i > 0 )||(j>0)) ) printf(",");
+                                printf ("{\n   \"source\" : \"%s\",\n   \"target\" : \"%s\",\n   \"type\" : \"suit\"\n}\n",words->entities[i].entity_name,words->entities[words->entities[i].links[j]].entity_name);
                                 subs++;
                         }
                         printf("\n");
@@ -184,31 +195,39 @@ int main(int argc,char *argv[]){
 
     }
     }
-    if ( json ) printf ("]\n");
+    printf ("]\n");
 
-    if ( !json )
-    {
-        printf("The number of root entities found were %d and the number of subs found were %d\n",roots,subs);
-        printf("The total number of Entities are %d\n",num_entities);
-        printf("The total number of Root Entities are %d\n",total_num_root_entities);
-        printf("The total number of Sub Entities are %d\n",total_num_sub_entities);
+    return WORDS_SUCCESS;
+}
+WORDS_STAT dump(const WORDS w)
+{
+        WORDS_IMPL *words;
+        // make the pointer non-opaque
+        words=(WORDS_IMPL *)w;
+
+        int i;
+        int roots=0;
+        int subs=0;
+        for (i=0;i<=words->num_entities;i++) 
+        {
+            int j;
+                if (words->entities[i].num_links >= 0) {
+                        printf("Root Entity '%s' discovered with %d sub links\n", words->entities[i].entity_name,words->entities[i].num_links);
+                        roots++;
+
+                        for (j=0; j<=words->entities[i].num_links;j++)  {
+                                printf("Sub Entity is %s\n",words->entities[words->entities[i].links[j]].entity_name);
+                                subs++;
+                        }
+                        printf("\n");
+
+                }
+
     }
+    printf("The number of root entities found were %d and the number of subs found were %d\n",roots,subs);
+    printf("The total number of Entities are %d\n",words->num_entities);
+    printf("The total number of Root Entities are %d\n",words->total_num_root_entities);
+    printf("The total number of Sub Entities are %d\n",words->total_num_sub_entities);
 
-
-
-
-
-
-return(0);
-// fwrite the array of structs out to save them:
-    out = fopen("entities.bin","wb");
-    ret=fwrite(entities,sizeof(entities),1,out);
-    fclose(out);
-
-// fread the array of structs in test:
-    in = fopen("entities.bin","rb");
-    ret=fread(entities,sizeof(entities),1,in);
-    fclose(in);
-
-    return 0;
+    return(0);
 }
