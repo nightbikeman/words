@@ -1,5 +1,7 @@
 .PHONY: clean
 
+# a test change
+
 all: x_hash3.o libxhash3.so x_hash3 
 
 clean:
