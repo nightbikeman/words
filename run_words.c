@@ -9,14 +9,42 @@
 
 #include "words.h"
 
+#define acronyms       0
+#define adjectives     1
+#define adverbs        2
+#define cia_factbook   3
+#define common_stuff   4
+#define compound_words 5
+#define crosswords     6
+#define female_names   7
+#define male_names     8
+#define nouns          9
+#define places        10
+#define single_words  11
+#define truths        12
+#define verbs         13
+#define MAX_WORDS     14
+
+#define ACRONYMS 	    all_books[acronyms]
+#define ADJECTIVES 	    all_books[adjectives]
+#define ADVERBS 	    all_books[adverbs]
+#define CIA_FACTBOOK 	all_books[cia_factbook]
+#define COMMON_STUFF 	all_books[common_stuff]
+#define COMPOUND_WORDS 	all_books[compound_words]
+#define CROSSWORDS 	    all_books[crosswords]
+#define FEMALE_NAMES 	all_books[female_names]
+#define MALE_NAMES 	    all_books[male_names]
+#define NOUNS 		    all_books[nouns]
+#define PLACES 		    all_books[places]
+#define SINGLE_WORDS 	all_books[single_words]
+#define TRUTHS 		    all_books[truths]
+#define VERBS 		    all_books[verbs]
+
 int first = 0;
 char *sentence, *word_pntr;
-char word_in[1024];
-char word_in_lower[1024];
 char buffer_string[BUFFER_LEN];
 
-
-char
+static char
 get_sentence ()
 {
     const char s[6] = ".?!\"";
@@ -35,7 +63,7 @@ get_sentence ()
 
 }
 
-int
+static int
 read_in_file (char *file)
 {
 
@@ -126,42 +154,12 @@ main (int argc, char **argv)
     char word_in_lower[1024];
     char *end_word;
 
-#define ACRONYMS 	&all_books[acronyms]
-#define ADJECTIVES 	&all_books[adjectives]
-#define ADVERBS 	&all_books[adverbs]
-#define CIA_FACTBOOK 	&all_books[cia_factbook]
-#define COMMON_STUFF 	&all_books[common_stuff]
-#define COMPOUND_WORDS 	&all_books[compound_words]
-#define CROSSWORDS 	&all_books[crosswords]
-#define FEMALE_NAMES 	&all_books[female_names]
-#define MALE_NAMES 	&all_books[male_names]
-#define NOUNS 		&all_books[nouns]
-#define PLACES 		&all_books[places]
-#define SINGLE_WORDS 	&all_books[single_words]
-#define TRUTHS 		&all_books[truths]
-#define VERBS 		&all_books[verbs]
-
-#define acronyms 0
-#define adjectives 1
-#define adverbs 2
-#define cia_factbook 3
-#define common_stuff 4
-#define compound_words 5
-#define crosswords 6
-#define female_names 7
-#define male_names 8
-#define nouns 9
-#define places 10
-#define single_words 11
-#define truths 12
-#define verbs 13
-#define MAX_WORDS 14
 
     const char *all_books_file_names[MAX_WORDS] =
         { "data/acronyms.txt", "data/adjectives.txt", "data/adverbs.txt",
-"data/cia_factbook.txt", "data/common_stuff.txt", "data/compound_words.txt", "data/crosswords.txt",
-"data/female_names.txt", "data/male_names.txt", "data/nouns.txt", "data/places.txt",
-"data/single_words.txt", "data/truths.txt", "data/verbs.txt" };
+			"data/cia_factbook.txt", "data/common_stuff.txt", "data/compound_words.txt", "data/crosswords.txt",
+			"data/female_names.txt", "data/male_names.txt", "data/nouns.txt", "data/places.txt",
+			"data/single_words.txt", "data/truths.txt", "data/verbs.txt" };
     WORDS all_books[MAX_WORDS];
 
     char **test_words = (char **) malloc (sizeof (char *) * lines_allocated);
@@ -403,7 +401,7 @@ main (int argc, char **argv)
             begin = time (NULL);
 
             printf ("Reading input file %s\n", optarg);
-            ret = load (TRUTHS, optarg);
+            ret = load (&TRUTHS, optarg);
 
             end = time (NULL);
             printf ("The Entity generation took %f seconds to complete.\n\n",
@@ -449,7 +447,7 @@ main (int argc, char **argv)
 // Load in words
             begin = time (NULL);
             printf ("Reading input file %s\n", all_books_file_names[truths]);
-            ret = load (TRUTHS, all_books_file_names[truths]);
+            ret = load (&TRUTHS, all_books_file_names[truths]);
             end = time (NULL);
             printf ("The Entity generation took %f seconds to complete.\n\n",
                     difftime (end, begin));
@@ -594,7 +592,7 @@ main (int argc, char **argv)
         for (index = optind; index < argc; index++)
         {
             printf ("Reading input file %s\n", argv[index]);
-            ret = load (TRUTHS, argv[index]);
+            ret = load (&TRUTHS, argv[index]);
             if (ret == WORDS_SUCCESS)
                 printf ("%s read in successfully \n", argv[index]);
             else

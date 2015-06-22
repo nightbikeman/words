@@ -27,10 +27,21 @@ libxhash3.so: OBJECTS=x_hash3.o
 libxhash3.so : $(OBJECTS)
 	    $(CC) $(CFLAGS) $(OBJECTS) -o $@ $(LDFLAGS) 
 
-test: x_hash3
+TEST_FILE=test_in.txt
+test: all 
 	LD_LIBRARY_PATH=. time ./x_hash3 in.txt 
+	@echo ====================================
+	@echo
 	LD_LIBRARY_PATH=. time ./x_hash3 -b 100  4
+	@echo ====================================
+	@echo
 	LD_LIBRARY_PATH=. time ./x_hash3 -c 100 test-txt
-	LD_LIBRARY_PATH=. time ./x_hash3 -o input_file
+	@echo ====================================
+	@echo
+	LD_LIBRARY_PATH=. time ./x_hash3 -o $(TEST_FILE)
+	@echo ====================================
+	@echo
 	LD_LIBRARY_PATH=. time ./x_hash3 -s 2 flower tree 
+	@echo ====================================
+	@echo
 
