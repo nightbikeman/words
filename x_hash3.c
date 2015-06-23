@@ -16,13 +16,6 @@ typedef struct truths_impl
     long num_entities;
 } WORDS_IMPL;
 
-typedef struct entity
-{
-    char *name;
-    int num_links;              //Number of links to Sub Entities for this Entity
-    struct entity **links;      //A dymanic array of long pointers to other Root Entities
-} entity;
-
 int
 create_in_txt (int num_lines, char *file)
 {
@@ -163,7 +156,7 @@ find_entity (char *word, hash_table_t * table)
 }
 
 WORDS_STAT
-load (WORDS * w, const char *file)
+load (WORDS * w, const char *file, const WORD_TYPE type)
 {
     char line[1000000];
     FILE *in;
@@ -233,12 +226,14 @@ load (WORDS * w, const char *file)
             {
                 // Initialise this Root Entity:
                 focal_root_entity = add_ent (root, truths->table);
+				focal_root_entity->type=type;
                 truths->total_num_root_entities++;
             }
             else
             {
 
                 focal_root_entity = i;
+				focal_root_entity->type|=type;
             }
         }
 
@@ -614,7 +609,7 @@ word_search (const WORDS w, long nth_order, long quick, char *entity1,
 }
 
 
-WORDS_STAT
+entity *
 find_word (const WORDS w, char *word)
 {
     WORDS_IMPL *truths;
@@ -624,5 +619,5 @@ find_word (const WORDS w, char *word)
     /* Visit each entry using iterator object */
     entity *e = find_entity (word, truths->table);
 
-    return (e != NULL) ? WORDS_SUCCESS : WORDS_FAIL;
+    return e;
 }
