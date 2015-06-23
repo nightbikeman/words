@@ -222,7 +222,7 @@ load (WORDS * w, const char *file)
                     tm_info = localtime (&timer);
                     strftime (buffer, 26, "%Y:%m:%d %H:%M:%S", tm_info);
                     printf
-                        ("%s: Total lines ingested are %d - latest root entry is '%s'\n",
+                        ("%s: Total lines ingested are %d - latest root entry is %s\n",
                          buffer, lines, root);
                 }
 
@@ -267,7 +267,7 @@ load (WORDS * w, const char *file)
 
     printf ("Number of lines read were %d\n", lines);
 
-    *w = truths;
+    *w = (WORDPTR*)truths;
 
     return WORDS_SUCCESS;
 }

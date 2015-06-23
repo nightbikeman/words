@@ -1,0 +1,140 @@
+
+Root Entity is 'search engines' and the number of links are 4
+Sub Entity is 'yahoo'
+Sub Entity is 'bing'
+Sub Entity is 'google'
+Sub Entity is 'alta vista'
+Sub Entity is 'duck duck go'
+
+Root Entity is 'firewire' and the number of links are 2
+Sub Entity is 'computer'
+Sub Entity is 'telly'
+Sub Entity is 'video'
+
+Root Entity is 'hen' and the number of links are 1
+Sub Entity is 'farm animal'
+Sub Entity is 'british animal'
+
+Root Entity is 'rhino' and the number of links are 1
+Sub Entity is 'african animal'
+Sub Entity is 'wild animal'
+
+Root Entity is 'tiger' and the number of links are 1
+Sub Entity is 'african animal'
+Sub Entity is 'wild animal'
+
+Root Entity is 'pet' and the number of links are 5
+Sub Entity is 'animal'
+Sub Entity is 'dog'
+Sub Entity is 'cat'
+Sub Entity is 'rabbit'
+Sub Entity is 'mouse'
+Sub Entity is 'chinchilla'
+
+Root Entity is 'pig' and the number of links are 1
+Sub Entity is 'farm animal'
+Sub Entity is 'farm animal'
+
+Root Entity is 'farm animal' and the number of links are 7
+Sub Entity is 'animal'
+Sub Entity is 'pig'
+Sub Entity is 'hen'
+Sub Entity is 'sheep'
+Sub Entity is 'goat'
+Sub Entity is 'pig'
+Sub Entity is 'cow'
+Sub Entity is 'goat'
+
+Root Entity is 'animal' and the number of links are 6
+Sub Entity is 'ferret'
+Sub Entity is 'stout'
+Sub Entity is 'weasel'
+Sub Entity is 'farm animal'
+Sub Entity is 'african animal'
+Sub Entity is 'pet'
+Sub Entity is 'wild animal'
+
+Root Entity is 'camera' and the number of links are 4
+Sub Entity is 'picture'
+Sub Entity is 'image'
+Sub Entity is 'jpeg'
+Sub Entity is 'gif'
+Sub Entity is 'google'
+
+Root Entity is 'alligator' and the number of links are 1
+Sub Entity is 'african animal'
+Sub Entity is 'wild animal'
+
+Root Entity is 'hippo' and the number of links are 3
+Sub Entity is 'african animal'
+Sub Entity is 'african animal'
+Sub Entity is 'wild animal'
+Sub Entity is 'wild animal'
+
+Root Entity is 'african animal' and the number of links are 6
+Sub Entity is 'animal'
+Sub Entity is 'hippo'
+Sub Entity is 'alligator'
+Sub Entity is 'tiger'
+Sub Entity is 'giraffe'
+Sub Entity is 'rhino'
+Sub Entity is 'hippo'
+
+Root Entity is 'computer' and the number of links are 5
+Sub Entity is 'keyboard'
+Sub Entity is 'mouse'
+Sub Entity is 'screen'
+Sub Entity is 'disk'
+Sub Entity is 'usb'
+Sub Entity is 'firewire'
+
+Root Entity is 'giraffe' and the number of links are 1
+Sub Entity is 'african animal'
+Sub Entity is 'wild animal'
+
+Root Entity is 'google' and the number of links are 4
+Sub Entity is 'camera'
+Sub Entity is 'web'
+Sub Entity is 'advertising'
+Sub Entity is 'email'
+Sub Entity is 'search engines'
+
+Root Entity is 'british animal' and the number of links are 2
+Sub Entity is 'badger'
+Sub Entity is 'fox'
+Sub Entity is 'hen'
+
+Root Entity is 'badger' and the number of links are 1
+Sub Entity is 'wild animal'
+Sub Entity is 'british animal'
+
+Root Entity is 'telly' and the number of links are 1
+Sub Entity is 'firewire'
+Sub Entity is 'advertising'
+
+Root Entity is 'advertising' and the number of links are 3
+Sub Entity is 'google'
+Sub Entity is 'itv'
+Sub Entity is 'sky'
+Sub Entity is 'telly'
+
+Root Entity is 'mouse' and the number of links are 1
+Sub Entity is 'pet'
+Sub Entity is 'computer'
+
+Root Entity is 'goat' and the number of links are 1
+Sub Entity is 'farm animal'
+Sub Entity is 'farm animal'
+
+Root Entity is 'wild animal' and the number of links are 7
+Sub Entity is 'animal'
+Sub Entity is 'badger'
+Sub Entity is 'hippo'
+Sub Entity is 'alligator'
+Sub Entity is 'tiger'
+Sub Entity is 'giraffe'
+Sub Entity is 'rhino'
+Sub Entity is 'hippo'
+
+The total number of Root Entities are 2084586519
+The total number of Sub Entities are 45

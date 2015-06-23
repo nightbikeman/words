@@ -1,0 +1,23 @@
+search engines,yahoo,bing,google,alta vista,duck duck go
+firewire,computer,telly,video
+hen,farm animal,british animal
+rhino,african animal,wild animal
+tiger,african animal,wild animal
+pet,animal,dog,cat,rabbit,mouse,chinchilla
+pig,farm animal,farm animal
+farm animal,animal,pig,hen,sheep,goat,pig,cow,goat
+animal,ferret,stout,weasel,farm animal,african animal,pet,wild animal
+camera,picture,image,jpeg,gif,google
+alligator,african animal,wild animal
+hippo,african animal,african animal,wild animal,wild animal
+african animal,animal,hippo,alligator,tiger,giraffe,rhino,hippo
+computer,keyboard,mouse,screen,disk,usb,firewire
+giraffe,african animal,wild animal
+google,camera,web,advertising,email,search engines
+british animal,badger,fox,hen
+badger,wild animal,british animal
+telly,firewire,advertising
+advertising,google,itv,sky,telly
+mouse,pet,computer
+goat,farm animal,farm animal
+wild animal,animal,badger,hippo,alligator,tiger,giraffe,rhino,hippo
