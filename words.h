@@ -18,12 +18,16 @@
 #define BUFFER_LEN 100000000
 
 typedef int WORDS_STAT;
-typedef void *WORDS;
+typedef struct words {} WORDPTR;
+typedef WORDPTR *WORDS;
+
+typedef enum {UNKNOWN=0,TRUTH=1,NOUN=2,VERB=4} WORD_TYPE;
 
 WORDS_STAT load (WORDS * words, const char *filename);
 WORDS_STAT save (const WORDS words, char *filename);
 WORDS_STAT search (const WORDS words, char *word);
 WORDS_STAT find_word (const WORDS words, char *word);
+WORD_TYPE cat_word (const WORDS words, char *word);
 WORDS_STAT dump (const WORDS words);
 WORDS_STAT dump_json (const WORDS words);
 

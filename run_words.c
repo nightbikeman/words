@@ -25,20 +25,27 @@
 #define verbs         13
 #define MAX_WORDS     14
 
-#define ACRONYMS 	    all_books[acronyms]
-#define ADJECTIVES 	    all_books[adjectives]
-#define ADVERBS 	    all_books[adverbs]
-#define CIA_FACTBOOK 	all_books[cia_factbook]
-#define COMMON_STUFF 	all_books[common_stuff]
-#define COMPOUND_WORDS 	all_books[compound_words]
-#define CROSSWORDS 	    all_books[crosswords]
-#define FEMALE_NAMES 	all_books[female_names]
-#define MALE_NAMES 	    all_books[male_names]
-#define NOUNS 		    all_books[nouns]
-#define PLACES 		    all_books[places]
-#define SINGLE_WORDS 	all_books[single_words]
-#define TRUTHS 		    all_books[truths]
-#define VERBS 		    all_books[verbs]
+typedef struct book 
+{
+	char *filename;
+	char *name;
+	WORDS books;
+	
+} BOOK;
+#define ACRONYMS 	    books[acronyms].books
+#define ADJECTIVES 	    books[adjectives].books
+#define ADVERBS 	    books[adverbs].books
+#define CIA_FACTBOOK 	    books[cia_factbook].books
+#define COMMON_STUFF 	    books[common_stuff].books
+#define COMPOUND_WORDS 	    books[compound_words].books
+#define CROSSWORDS 	    books[crosswords].books
+#define FEMALE_NAMES 	    books[female_names].books
+#define MALE_NAMES 	    books[male_names].books
+#define NOUNS 		    books[nouns].books
+#define PLACES 		    books[places].books
+#define SINGLE_WORDS 	    books[single_words].books
+#define TRUTHS 		    books[truths].books
+#define VERBS 		    books[verbs].books
 
 int first = 0;
 char *sentence, *word_pntr;
@@ -155,12 +162,22 @@ main (int argc, char **argv)
     char *end_word;
 
 
-    const char *all_books_file_names[MAX_WORDS] =
-        { "data/acronyms.txt", "data/adjectives.txt", "data/adverbs.txt",
-			"data/cia_factbook.txt", "data/common_stuff.txt", "data/compound_words.txt", "data/crosswords.txt",
-			"data/female_names.txt", "data/male_names.txt", "data/nouns.txt", "data/places.txt",
-			"data/single_words.txt", "data/truths.txt", "data/verbs.txt" };
-    WORDS all_books[MAX_WORDS];
+    BOOK books[] = { 
+		{"data/acronyms.txt","acronyms"},
+		{"data/adjectives.txt","adjectives"},
+		{"data/adverbs.txt","adverbs"},
+		{"data/cia_factbook.txt","cia_factbook"},
+		{"data/common_stuff.txt","common_stuff"},
+		{"data/compound_words.txt","compound_words"},
+		{"data/crosswords.txt","crosswords"},
+		{"data/female_names.txt","female_names"},
+		{"data/male_names.txt","male_names"},
+		{"data/nouns.txt","nouns"},
+		{"data/places.txt","places"},
+		{"data/single_words.txt","single_words"},
+		{"data/truths.txt","truths"},
+		{"data/verbs.txt","verbs"} 
+	};
 
     char **test_words = (char **) malloc (sizeof (char *) * lines_allocated);
     if (test_words == NULL)
@@ -282,7 +299,7 @@ main (int argc, char **argv)
             int j;
             for (j = 0; j < MAX_WORDS; j++)
             {
-                ret = load (&all_books[j], all_books_file_names[j]);
+		ret = load (&books[j].books, books[j].filename);
             }
 
             end = time (NULL);
@@ -446,8 +463,8 @@ main (int argc, char **argv)
 
 // Load in words
             begin = time (NULL);
-            printf ("Reading input file %s\n", all_books_file_names[truths]);
-            ret = load (&TRUTHS, all_books_file_names[truths]);
+            printf ("Reading input file %s\n", books[truths].filename);
+            ret = load (&TRUTHS, books[truths].filename);
             end = time (NULL);
             printf ("The Entity generation took %f seconds to complete.\n\n",
                     difftime (end, begin));
@@ -481,9 +498,7 @@ main (int argc, char **argv)
                     "truths, adjectives, adverbs, nouns, verbs, acronyms, cia_factbook, common_stuff, compound_words, crosswords, female_names, male_names, places, single_words");
 
             for (j = 0; j < MAX_WORDS; j++)
-            {
-                ret = load (&all_books[j], all_books_file_names[j]);
-            }
+                ret = load (&books[j].books, books[j].filename);
 
             end = time (NULL);
             printf ("The Entity generation took %f seconds to complete.\n\n",
@@ -507,9 +522,8 @@ main (int argc, char **argv)
 // Create a lower case version of the word
                             strcpy (word_in_lower, word_in);
                             for (i = 0; word_in_lower[i]; i++)
-                            {
                                 word_in_lower[i] = tolower (word_in_lower[i]);
-                            }
+                            
                             printf ("%s\n", word_pntr);
 
 // Print the lower case version is there is one
@@ -525,37 +539,22 @@ main (int argc, char **argv)
 
                             for (j = 0; j < MAX_WORDS; j++)
                             {
-                                if (find_word (&all_books[j], word_in) ==
+                                if (find_word (books[j].books, word_in) ==
                                     WORDS_SUCCESS)
                                 {
                                     printf ("Found Entity %s in %s\n",
-                                            word_in, &all_books[j]);
+                                            word_in, books[j].name);
                                 }
                                 if (is_lower)
                                     if (find_word
-                                        (&all_books[j],
+                                        (books[j].books,
                                          word_in_lower) == WORDS_SUCCESS)
                                     {
                                         printf ("Found Entity %s in %s\n",
-                                                word_in_lower, &all_books[j]);
+                                                word_in_lower, books[j].name);
                                     }
                             }
 
-
-#pragma omp parallel private(nthreads, tid)
-                            {
-// Obtain thread number 
-                                tid = omp_get_thread_num ();
-//                              printf("Hello World from thread = %d\n", tid);
-
-// Only master thread does this 
-                                if (tid == 0)
-                                {
-                                    nthreads = omp_get_num_threads ();
-//                                      printf("Number of threads = %d\n", nthreads);
-                                }
-
-                            }   // All threads join master thread and disband 
                         }
 // Next word
                         word_pntr = strtok_r (NULL, " ", &end_word);
