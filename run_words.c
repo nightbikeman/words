@@ -204,7 +204,7 @@ main (int argc, char **argv)
         }
     }
 
-    while ((c = getopt (argc, argv, "b:c:o:s:t")) != -1)
+    while ((c = getopt (argc, argv, "b:c:o:s:t:")) != -1)
         switch (c)
         {
 
@@ -486,9 +486,9 @@ main (int argc, char **argv)
             break;
 
         case 't':
-            if (argc != 2)
+            if (argc != 3)
             {
-                printf ("Usage -t \n");
+                printf ("Usage -t input_file\n");
                 exit (1);
             }
 
@@ -497,14 +497,16 @@ main (int argc, char **argv)
             printf ("Reading input files %s\n",
                     "truths, adjectives, adverbs, nouns, verbs, acronyms, cia_factbook, common_stuff, compound_words, crosswords, female_names, male_names, places, single_words");
 
-            for (j = 0; j < MAX_WORDS; j++)
+            for (j = 0; j < MAX_WORDS; j++) {
+		printf("%s -  ",books[j].name);
                 ret = load (&books[j].books, books[j].filename);
-
+	    }
             end = time (NULL);
             printf ("The Entity generation took %f seconds to complete.\n\n",
                     difftime (end, begin));
 
-            if (read_in_file ("doc_file"))
+            printf ("Reading input file %s\n", optarg);
+            if (read_in_file (optarg))
             {
 
                 while (get_sentence ())
@@ -577,7 +579,7 @@ main (int argc, char **argv)
             fprintf (stderr, "Output into format: Usage -o input_file\n");
             fprintf (stderr,
                      "Search: Usage -s nth_order<1|2> entity1 entity2\n");
-            fprintf (stderr, "Ingest Test file: Usage -t \n");
+            fprintf (stderr, "Ingest Test file: Usage -t input_file\n");
             exit (1);
 
         default:
