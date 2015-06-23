@@ -25,7 +25,7 @@ run_words.o:CPPFLAGS=-g -fopenmp $(DEBUG)
 libxhash3.so: LDFLAGS=-shared -ldhash 
 libxhash3.so: OBJECTS=x_hash3.o words.o
 
-libxhash3.so : $(OBJECTS)
+libxhash3.so : x_hash3.o words.o
 	    $(CC) $(CFLAGS) $(OBJECTS) -o $@ $(LDFLAGS) 
 
 TEST_FILE=test_in.txt
