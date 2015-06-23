@@ -1,0 +1,5 @@
+*.o
+*.so
+find_connection
+x_hash3
+
