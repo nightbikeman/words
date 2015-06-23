@@ -29,23 +29,11 @@ typedef struct book
 {
 	char *filename;
 	char *name;
-	WORDS books;
-	
+	WORD_TYPE type;
 } BOOK;
-#define ACRONYMS 	    books[acronyms].books
-#define ADJECTIVES 	    books[adjectives].books
-#define ADVERBS 	    books[adverbs].books
-#define CIA_FACTBOOK 	    books[cia_factbook].books
-#define COMMON_STUFF 	    books[common_stuff].books
-#define COMPOUND_WORDS 	    books[compound_words].books
-#define CROSSWORDS 	    books[crosswords].books
-#define FEMALE_NAMES 	    books[female_names].books
-#define MALE_NAMES 	    books[male_names].books
-#define NOUNS 		    books[nouns].books
-#define PLACES 		    books[places].books
-#define SINGLE_WORDS 	    books[single_words].books
-#define TRUTHS 		    books[truths].books
-#define VERBS 		    books[verbs].books
+
+WORDS words;
+
 
 int first = 0;
 char *sentence, *word_pntr;
@@ -163,20 +151,20 @@ main (int argc, char **argv)
 
 
     BOOK books[] = { 
-		{"data/acronyms.txt","acronyms"},
-		{"data/adjectives.txt","adjectives"},
-		{"data/adverbs.txt","adverbs"},
-		{"data/cia_factbook.txt","cia_factbook"},
-		{"data/common_stuff.txt","common_stuff"},
-		{"data/compound_words.txt","compound_words"},
-		{"data/crosswords.txt","crosswords"},
-		{"data/female_names.txt","female_names"},
-		{"data/male_names.txt","male_names"},
-		{"data/nouns.txt","nouns"},
-		{"data/places.txt","places"},
-		{"data/single_words.txt","single_words"},
-		{"data/truths.txt","truths"},
-		{"data/verbs.txt","verbs"} 
+		{"data/acronyms.txt","acronyms",ACRONYMS},
+		{"data/adjectives.txt","adjectives",ADJECTIVES},
+		{"data/adverbs.txt","adverbs",ADVERBS},
+		{"data/cia_factbook.txt","cia_factbook",CIA_FACTBOOK},
+		{"data/common_stuff.txt","common_stuff",COMMON_STUFF},
+		{"data/compound_words.txt","compound_words",COMPOUND_WORDS},
+		{"data/crosswords.txt","crosswords",CROSSWORDS},
+		{"data/female_names.txt","female_names",FEMALE_NAMES},
+		{"data/male_names.txt","male_names",MALE_NAMES},
+		{"data/nouns.txt","nouns",NOUNS},
+		{"data/places.txt","places",PLACES},
+		{"data/single_words.txt","single_words",SINGLE_WORDS},
+		{"data/truths.txt","truths",TRUTHS},
+		{"data/verbs.txt","verbs",VERBS} 
 	};
 
     char **test_words = (char **) malloc (sizeof (char *) * lines_allocated);
@@ -294,13 +282,14 @@ main (int argc, char **argv)
 
             begin = time (NULL);
 
-            printf ("Reading input files %s\n",
-                    "truths, adjectives, adverbs, nouns, verbs, acronyms, cia_factbook, common_stuff, compound_words, crosswords, female_names, male_names, places, single_words");
+            printf ("Reading input files ");
             int j;
             for (j = 0; j < MAX_WORDS; j++)
             {
-		ret = load (&books[j].books, books[j].filename);
+				printf ("%s ",books[j].name);
+				ret = load (&words, books[j].filename, books[j].type);
             }
+            printf ("\n");
 
             end = time (NULL);
             printf ("The Entity generation took %f seconds to complete.\n\n",
@@ -352,12 +341,12 @@ main (int argc, char **argv)
 
                     nth_order = 1;
                     ret =
-                        word_search (TRUTHS, nth_order, FULL,
+                        word_search (words, nth_order, FULL,
                                      test_words[rand1], test_words[rand2]);
 
                     nth_order = 2;
                     ret =
-                        word_search (TRUTHS, nth_order, FULL,
+                        word_search (words, nth_order, FULL,
                                      test_words[rand1], test_words[rand2]);
 
                 }
@@ -418,7 +407,7 @@ main (int argc, char **argv)
             begin = time (NULL);
 
             printf ("Reading input file %s\n", optarg);
-            ret = load (&TRUTHS, optarg);
+            ret = load (&words, optarg,TRUTHS);
 
             end = time (NULL);
             printf ("The Entity generation took %f seconds to complete.\n\n",
@@ -429,9 +418,9 @@ main (int argc, char **argv)
             {
                 begin = time (NULL);
 
-                dump_json (TRUTHS);
-                dump_formatted (TRUTHS);
-                dump_txt (TRUTHS);
+                dump_json (words);
+                dump_formatted (words);
+                dump_txt (words);
 
                 end = time (NULL);
                 printf
@@ -464,7 +453,7 @@ main (int argc, char **argv)
 // Load in words
             begin = time (NULL);
             printf ("Reading input file %s\n", books[truths].filename);
-            ret = load (&TRUTHS, books[truths].filename);
+            ret = load (&words, books[truths].filename,TRUTHS);
             end = time (NULL);
             printf ("The Entity generation took %f seconds to complete.\n\n",
                     difftime (end, begin));
@@ -473,7 +462,7 @@ main (int argc, char **argv)
             begin = time (NULL);
 
 // Choose QUICK or FULL scans
-            ret = word_search (TRUTHS, nth_order, FULL, argv[3], argv[4]);
+            ret = word_search (words, nth_order, FULL, argv[3], argv[4]);
             end = time (NULL);
 
             if (ret == 0)
@@ -499,7 +488,7 @@ main (int argc, char **argv)
 
             for (j = 0; j < MAX_WORDS; j++) {
 		printf("%s -  ",books[j].name);
-                ret = load (&books[j].books, books[j].filename);
+                ret = load (&words, books[j].filename,books[j].type);
 	    }
             end = time (NULL);
             printf ("The Entity generation took %f seconds to complete.\n\n",
@@ -541,20 +530,19 @@ main (int argc, char **argv)
 
                             for (j = 0; j < MAX_WORDS; j++)
                             {
-                                if (find_word (books[j].books, word_in) ==
-                                    WORDS_SUCCESS)
+                                entity *e=find_word (words, word_in); 
+                                if ( e != NULL )
                                 {
-                                    printf ("Found Entity %s in %s\n",
-                                            word_in, books[j].name);
+                                    printf ("Found Entity %s in %s\n", word_in, word_type_str(e->type));
                                 }
                                 if (is_lower)
-                                    if (find_word
-                                        (books[j].books,
-                                         word_in_lower) == WORDS_SUCCESS)
+								{
+									entity *e=find_word (words, word_in_lower); 
+                                    if ( e != NULL )
                                     {
-                                        printf ("Found Entity %s in %s\n",
-                                                word_in_lower, books[j].name);
+                                        printf ("Found Entity %s in %s\n", word_in_lower, word_type_str(e->type));
                                     }
+								}
                             }
 
                         }
@@ -593,7 +581,7 @@ main (int argc, char **argv)
         for (index = optind; index < argc; index++)
         {
             printf ("Reading input file %s\n", argv[index]);
-            ret = load (&TRUTHS, argv[index]);
+            ret = load (&words, argv[index],TRUTHS);
             if (ret == WORDS_SUCCESS)
                 printf ("%s read in successfully \n", argv[index]);
             else
