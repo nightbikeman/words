@@ -46,6 +46,7 @@ typedef enum
 
 typedef struct entity
 {
+	int flag;
     char *name;
 	WORD_TYPE type;
     int num_links;              //Number of links to Sub Entities for this Entity

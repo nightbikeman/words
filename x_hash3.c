@@ -99,6 +99,7 @@ add_ent (char *name, hash_table_t * table)
     e->name = strdup (name);
     e->num_links = -1;
     e->links = NULL;
+	e->flag=0;
 
     // Add a entry in the hash table for searching
     /* Enter a key named "My Data" and specify it's value as a pointer to my_data */
@@ -390,9 +391,57 @@ dump_txt (const WORDS w)
     return (WORDS_SUCCESS);
 }
 
+// traverse the tree from a seed point looking for another entity
+// marking ones as searched as we go
+int 
+traverse_tree(entity *seed,entity *target,int depth,int mark)
+{
+	int i;
+	int found=WORDS_FAIL;
+
+	if ((void*)seed == (void*)target)
+		return WORDS_SUCCESS;
+
+	if ( depth == 0 )
+		return WORDS_FAIL;
+
+	// mark this one as visited
+	seed->flag=mark;
+
+	for(i=0; (i< seed->num_links) && ( found == WORDS_FAIL ) ; i ++)
+	{
+		if ( seed->links[i]->flag != mark )
+		{
+			found = traverse_tree(seed->links[i],target,depth--,mark);
+		}
+	}
+
+	return found;
+}
 WORDS_STAT
-word_search (const WORDS w, long nth_order, long quick, char *entity1,
-             char *entity2)
+word_search_r (const WORDS w, long nth_order, long quick, char *entity1, char *entity2)
+{
+	WORDS_STAT ret = WORDS_FAIL;
+    WORDS_IMPL *words;
+    // make the pointer non-opaque
+    words = (WORDS_IMPL *) w;
+	static int mark=0;
+
+	mark ++;
+	entity *found_entity1 = find_entity (entity1, words->table);
+	if ( found_entity1 != NULL )
+	{
+		entity *found_entity2 = find_entity (entity2, words->table);
+		if ( found_entity2 != NULL )
+		{
+			ret = traverse_tree(found_entity1,found_entity2,nth_order,mark);
+		}
+	}
+	return ret;
+}
+
+WORDS_STAT
+word_search (const WORDS w, long nth_order, long quick, char *entity1, char *entity2)
 {
 
     int j, k;
@@ -401,7 +450,6 @@ word_search (const WORDS w, long nth_order, long quick, char *entity1,
     WORDS_IMPL *truths;
     // make the pointer non-opaque
     truths = (WORDS_IMPL *) w;
-    hash_entry_t *entry;
     entity *found_entity1, *found_entity2, *found_entity3;
 
     tid = omp_get_thread_num ();
