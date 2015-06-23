@@ -44,7 +44,7 @@ test: all
 	LD_LIBRARY_PATH=. time ./x_hash3 -s 2 flower tree 
 	@echo ====================================
 	@echo
-	LD_LIBRARY_PATH=. time ./x_hash3 -t
+	LD_LIBRARY_PATH=. time ./x_hash3 -t doc_file
 	@echo ====================================
 	@echo
 
