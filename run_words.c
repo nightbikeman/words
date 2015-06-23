@@ -23,7 +23,9 @@
 #define single_words  11
 #define truths        12
 #define verbs         13
-#define MAX_WORDS     14
+#define uk_places     14
+#define uk_county     15
+#define MAX_WORDS     16
 
 typedef struct book 
 {
@@ -164,7 +166,9 @@ main (int argc, char **argv)
 		{"data/places.txt","places",PLACES},
 		{"data/single_words.txt","single_words",SINGLE_WORDS},
 		{"data/truths.txt","truths",TRUTHS},
-		{"data/verbs.txt","verbs",VERBS} 
+		{"data/verbs.txt","verbs",VERBS},
+		{"data/uk_places","verbs",UK_PLACE},
+		{"data/uk_county","verbs",UK_COUNTY},
 	};
 
     char **test_words = (char **) malloc (sizeof (char *) * lines_allocated);
@@ -483,13 +487,13 @@ main (int argc, char **argv)
 
             begin = time (NULL);
 
-            printf ("Reading input files %s\n",
-                    "truths, adjectives, adverbs, nouns, verbs, acronyms, cia_factbook, common_stuff, compound_words, crosswords, female_names, male_names, places, single_words");
+            printf ("Reading input files ");
 
             for (j = 0; j < MAX_WORDS; j++) {
-		printf("%s -  ",books[j].name);
+				printf("%s ",books[j].name);
                 ret = load (&words, books[j].filename,books[j].type);
 	    }
+            printf ("\n");
             end = time (NULL);
             printf ("The Entity generation took %f seconds to complete.\n\n",
                     difftime (end, begin));

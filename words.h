@@ -39,7 +39,9 @@ typedef enum
     PLACES = 1024,
     SINGLE_WORDS = 2048,
     TRUTHS = 4096,
-    VERBS = 8192
+    VERBS = 8192,
+    UK_PLACE = 16384,
+    UK_COUNTY = 32768
 } WORD_TYPE;
 
 typedef struct entity
