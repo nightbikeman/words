@@ -1,7 +1,7 @@
 .PHONY: clean
 # This is a test
 
-all: x_hash3.o libxhash3.so x_hash3 
+all: x_hash3.o libxhash3.so x_hash3 find_connection
 
 clean:
 	rm -f *.so *.o x_hash2 x_hash3 out.txt
@@ -13,12 +13,15 @@ x_hash: x_hash.o
 x_hash2: LDFLAGS=-lhiredis
 x_hash2: x_hash2.o
 
-x_hash3: LDFLAGS=-L. -lxhash3  -ldhash -fopenmp
+find_connection x_hash3: LDFLAGS=-L. -lxhash3  -ldhash -fopenmp
 x_hash3: run_words.o 
 
 words.o x_hash3.o:CPPFLAGS=-g -fPIC -fopenmp $(DEBUG)
 x_hash3.o:x_hash3.c
 words.o:words.c
+
+find_connection.o:find_connection.c
+find_connection:find_connection.o
 
 run_words.o:CPPFLAGS=-g -fopenmp $(DEBUG)
 
@@ -30,6 +33,11 @@ libxhash3.so : x_hash3.o words.o
 
 TEST_FILE=test_in.txt
 test: all 
+	@LD_LIBRARY_PATH=.  ./find_connection test_in.txt google sky 
+	@if LD_LIBRARY_PATH=. ./find_connection test_in.txt google sky1  ; then  false ; fi
+	@echo PASS
+
+confidence: all 
 	LD_LIBRARY_PATH=. time ./x_hash3 in.txt 
 	@echo ====================================
 	@echo
