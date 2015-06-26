@@ -1,23 +1,23 @@
-search engines,yahoo,bing,google,alta vista,duck duck go
-firewire,computer,telly,video
-hen,farm animal,british animal
-rhino,african animal,wild animal
-tiger,african animal,wild animal
-pet,animal,dog,cat,rabbit,mouse,chinchilla
-pig,farm animal,farm animal
-farm animal,animal,pig,hen,sheep,goat,pig,cow,goat
-animal,ferret,stout,weasel,farm animal,african animal,pet,wild animal
-camera,picture,image,jpeg,gif,google
-alligator,african animal,wild animal
-hippo,african animal,african animal,wild animal,wild animal
-african animal,animal,hippo,alligator,tiger,giraffe,rhino,hippo
-computer,keyboard,mouse,screen,disk,usb,firewire
-giraffe,african animal,wild animal
-google,camera,web,advertising,email,search engines
-british animal,badger,fox,hen
-badger,wild animal,british animal
-telly,firewire,advertising
-advertising,google,itv,sky,telly
-mouse,pet,computer
-goat,farm animal,farm animal
-wild animal,animal,badger,hippo,alligator,tiger,giraffe,rhino,hippo
+search engines 4,yahoo,bing,google,alta vista,duck duck go
+firewire 2,computer,telly,video
+hen 1,farm animal,british animal
+rhino 1,african animal,wild animal
+tiger 1,african animal,wild animal
+pet 5,animal,dog,cat,rabbit,mouse,chinchilla
+pig 1,farm animal,farm animal
+farm animal 7,animal,pig,hen,sheep,goat,pig,cow,goat
+animal 6,ferret,stout,weasel,farm animal,african animal,pet,wild animal
+camera 4,picture,image,jpeg,gif,google
+alligator 1,african animal,wild animal
+hippo 3,african animal,african animal,wild animal,wild animal
+african animal 6,animal,hippo,alligator,tiger,giraffe,rhino,hippo
+computer 5,keyboard,mouse,screen,disk,usb,firewire
+giraffe 1,african animal,wild animal
+google 4,camera,web,advertising,email,search engines
+british animal 2,badger,fox,hen
+badger 1,wild animal,british animal
+telly 1,firewire,advertising
+advertising 3,google,itv,sky,telly
+mouse 1,pet,computer
+goat 1,farm animal,farm animal
+wild animal 7,animal,badger,hippo,alligator,tiger,giraffe,rhino,hippo
