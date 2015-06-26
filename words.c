@@ -1,45 +1,82 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+
 #include "words.h"
 
 const char *
-word_type_str (WORD_TYPE type )
+word_type_str (WORD_TYPE type)
 {
-    switch (type)
+    static char result[1024];
+	result[0]=0;
+    int j = 1;
+    while (type != 0)
     {
-    case UNKNOWN:
-        return "unknown ";
-    case ACRONYMS:
-        return "acronym ";
-    case ADJECTIVES:
-        return "adjective ";
-    case ADVERBS:
-        return "adverbs";
-    case CIA_FACTBOOK:
-        return "CIA_factbook ";
-    case COMMON_STUFF:
-        return "common_stuff ";
-    case COMPOUND_WORDS:
-        return "compound_word ";
-    case CROSSWORDS:
-        return "crosswords ";
-    case FEMALE_NAMES:
-        return "female_name ";
-    case MALE_NAMES:
-        return "male_name ";
-    case NOUNS:
-        return "noun ";
-    case PLACES:
-        return "place ";
-    case SINGLE_WORDS:
-        return "single_word ";
-    case TRUTHS:
-        return "truth ";
-    case VERBS:
-        return "verb ";
-    case UK_PLACE:
-        return "uk_place ";
-    case UK_COUNTY:
-        return "uk_county ";
-    default:
-        return "unspecified";
+		int g=type & j;
+		if ( g )
+		{
+        switch (g)
+        {
+        case UNKNOWN:
+            strcat (result, "unknown ");
+			break;
+        case ACRONYMS:
+            strcat(result, "acronym ");
+            break;
+        case ADJECTIVES:
+            strcat(result, "adjective ");
+            break;
+        case ADVERBS:
+            strcat(result, "adverbs");
+            break;
+        case CIA_FACTBOOK:
+            strcat(result, "CIA_factbook ");
+            break;
+        case COMMON_STUFF:
+            strcat(result, "common_stuff ");
+            break;
+        case COMPOUND_WORDS:
+            strcat(result, "compound_word ");
+            break;
+        case CROSSWORDS:
+            strcat(result, "crosswords ");
+            break;
+        case FEMALE_NAMES:
+            strcat(result, "female_name ");
+            break;
+        case MALE_NAMES:
+            strcat(result, "male_name ");
+            break;
+        case NOUNS:
+            strcat(result, "noun ");
+            break;
+        case PLACES:
+            strcat(result, "place ");
+            break;
+        case SINGLE_WORDS:
+            strcat(result, "single_word ");
+            break;
+        case TRUTHS:
+            strcat(result, "truth ");
+            break;
+        case VERBS:
+            strcat(result, "verb ");
+            break;
+        case UK_PLACE:
+            strcat(result, "uk_place ");
+            break;
+        case UK_COUNTY:
+            strcat(result, "uk_county ");
+            break;
+        default:
+            strcat(result, "unspecified ");
+            break;
+        }
+        type &= ~j;
+		assert(strlen(result) < sizeof(result));
+		}
+        j = j << 1;
     }
+    return result;
 }

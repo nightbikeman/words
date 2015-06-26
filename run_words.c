@@ -511,14 +511,14 @@ main (int argc, char **argv)
 							entity *e=find_word (words, word_pntr); 
 							if ( e != NULL )
 							{
-								printf ("Found Entity %s in %s\n", word_pntr, word_type_str(e->type));
+								printf ("Found Entity \"%s\" in %s\n", word_pntr, word_type_str(e->type));
 							}
 							if (is_lower)
 							{
-								entity *e=find_word (words, word_in_lower); 
+								e=find_word (words, word_in_lower); 
 								if ( e != NULL )
 								{
-									printf ("Found Entity %s in %s\n", word_in_lower, word_type_str(e->type));
+									printf ("Found Entity \"%s\" in %s\n", word_in_lower, word_type_str(e->type));
 								}
 							}
 
