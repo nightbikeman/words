@@ -19,7 +19,6 @@ typedef struct truths_impl
 int
 create_in_txt (int num_lines, char *file)
 {
-    int n;
     int i, j;
     char buf[100];
     FILE *out;
@@ -29,13 +28,13 @@ create_in_txt (int num_lines, char *file)
 
         static char charset[] =
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
-        int n;
 
         if (length)
         {
             if (randomString)
             {
                 int l = (int) (sizeof (charset) - 1);
+				int n;
                 for (n = 0; n < length; n++)
                 {
                     int key = rand () % l;      // per-iteration instantiation
@@ -51,12 +50,10 @@ create_in_txt (int num_lines, char *file)
     if (out == NULL)
         exit (1);
 
-    printf ("Writing %ld lines of O/P into %s \n", num_lines, file);
+    printf ("Writing %d lines of O/P into %s \n", num_lines, file);
 
     for (i = 0; i < num_lines; i++)
     {
-        n = rand () % 60000;
-
         for (j = 0; j < (rand () % 40 + 10); j++)
         {
 
@@ -144,34 +141,19 @@ find_entity (char *word, hash_table_t * table)
     hash_key_t key;
     hash_value_t value;
     key.type = HASH_KEY_STRING;
-    key.str = strdup (word);
+    key.str = word;
     int error;
     if ((error = hash_lookup (table, &key, &value)) == HASH_SUCCESS)
     {
         e = value.ptr;
     }
-    free (key.str);
-
     return e;
 
 }
 
 WORDS_STAT
-load (WORDS * w, const char *file, const WORD_TYPE type)
+initialise (WORDS * w)
 {
-    char line[1000000];
-    FILE *in;
-    int line_length;
-    unsigned long *temp;
-    int index;
-    int ret;
-    int roots;
-    int lines = 0;
-    int json = 0;
-    char buffer[26];
-    struct tm *tm_info;
-    time_t timer;
-    struct entity *entities = 0;
 
     WORDS_IMPL *truths;
     truths = malloc (sizeof (*truths));
@@ -190,15 +172,37 @@ load (WORDS * w, const char *file, const WORD_TYPE type)
                  hash_error_string (error));
         return error;
     }
+    truths->num_entities = -1;
+    truths->total_num_root_entities=0;
+    truths->total_num_sub_entities=0;
+
+    *w = (WORDPTR*)truths;
+    return WORDS_SUCCESS;
+}
+
+WORDS_STAT
+load (WORDS w, const char *file, const WORD_TYPE type)
+{
+    char line[1000000];
+    FILE *in;
+    int line_length;
+    int lines = 0;
+    int json = 0;
+    char buffer[26];
+    struct tm *tm_info;
+    time_t timer;
+
+    WORDS_IMPL *truths;
+    // make the pointer non-opaque
+    truths = (WORDS_IMPL *) w;
 
     in = fopen (file, "r");
     if (in == NULL)
     {
-        printf ("Input file %s not found \n");
+        printf ("Input file %s not found \n",file);
         exit (1);
     }
 
-    truths->num_entities = -1;
     while (1 == fscanf (in, "%[^\n]%n\n", line, &line_length))
     {                           //read one line
         char *word;
@@ -238,7 +242,7 @@ load (WORDS * w, const char *file, const WORD_TYPE type)
             }
         }
 
-        for (; word = strtok_r (NULL, ",", &ptr);)
+        for (; (word = strtok_r (NULL, ",", &ptr));)
         {
             entity *sub_entity;
 
@@ -263,7 +267,6 @@ load (WORDS * w, const char *file, const WORD_TYPE type)
 
     printf ("Number of lines read were %d\n", lines);
 
-    *w = (WORDPTR*)truths;
 
     return WORDS_SUCCESS;
 }
@@ -289,7 +292,7 @@ dump_json (const WORDS w)
         struct entity *data = (struct entity *) entry->value.ptr;
         int j;
 
-        if (data->name, data->num_links > 0)
+        if ( data->num_links > 0)
         {
             for (j = 0; j <= data->num_links; j++)
             {
@@ -331,7 +334,7 @@ dump_formatted (const WORDS w)
     {
         struct entity *data = (struct entity *) entry->value.ptr;
 
-        if (data->name, data->num_links > 0)
+        if (data->num_links > 0)
         {
             fprintf (out,
                      "\nRoot Entity is '%s' and the number of links are %d\n",
@@ -374,9 +377,9 @@ dump_txt (const WORDS w)
     {
         struct entity *data = (struct entity *) entry->value.ptr;
 
-        if (data->name, data->num_links > 0)
+        if (data->num_links > 0)
         {
-            fprintf (out, "%s", data->name, data->num_links);
+            fprintf (out, "%s %d", data->name, data->num_links);
 
             for (j = 0; j <= data->num_links; j++)
                 fprintf (out, ",%s", data->links[j]->name);
@@ -446,11 +449,12 @@ word_search (const WORDS w, long nth_order, long quick, char *entity1, char *ent
 
     int j, k;
     int found = 0;
-    long nthreads, tid;
+    long nthreads __attribute__ ((unused)) ;
+    long tid;
     WORDS_IMPL *truths;
     // make the pointer non-opaque
     truths = (WORDS_IMPL *) w;
-    entity *found_entity1, *found_entity2, *found_entity3;
+    entity *found_entity1, *found_entity2;
 
     tid = omp_get_thread_num ();
     //   printf("Hello from thread = %d\n", tid);
@@ -484,8 +488,8 @@ word_search (const WORDS w, long nth_order, long quick, char *entity1, char *ent
                 // Scan each link in Enity1 for Entity2->name  &&
                 // Scan each link in Enity2 for Entity1->name
                 //
-                if ((found_entity1->name, found_entity1->num_links > 0)
-                    || (found_entity2->name, found_entity2->num_links > 0))
+                if ((found_entity1->num_links > 0)
+                    || (found_entity2->num_links > 0))
                 {
                     //                     printf("Entity1: Root is %s and num_links are %d\n",found_entity1->name,found_entity1->num_links);
                     //                     printf("Entity2: Root is %s and num_links are %d\n",found_entity2->name,found_entity2->num_links);
@@ -498,7 +502,7 @@ word_search (const WORDS w, long nth_order, long quick, char *entity1, char *ent
                              found_entity2->name) == 0)
                         {
                             printf
-                                ("#1# Thread id(%d) %s was found in => %s \n",
+                                ("#1# Thread id(%ld) %s was found in => %s \n",
                                  tid, found_entity1->links[j]->name,
                                  found_entity1->name);
                             found++;
@@ -515,7 +519,7 @@ word_search (const WORDS w, long nth_order, long quick, char *entity1, char *ent
                              found_entity1->name) == 0)
                         {
                             printf
-                                ("#1# Thread id(%d) %s was found in => %s \n",
+                                ("#1# Thread id(%ld) %s was found in => %s \n",
                                  tid, found_entity2->links[j]->name,
                                  found_entity2->name);
                             found++;
@@ -567,8 +571,8 @@ word_search (const WORDS w, long nth_order, long quick, char *entity1, char *ent
                 // Scan each link in Enity1 for Entity2->link[k]->name  &&
                 // Scan each link in Enity2 for Entity1->link[j]->name
                 //
-                if ((found_entity1->name, found_entity1->num_links > 0)
-                    && (found_entity2->name, found_entity2->num_links > 0))
+                if ((found_entity1->num_links > 0)
+                    && (found_entity2->num_links > 0))
                 {
                     //                      if(VERBOSE)printf("Entity1: Root is %s and num_links are %d\n",found_entity1->name,found_entity1->num_links);
                     //                      if(VERBOSE)printf("Entity2: Root is %s and num_links are %d\n",found_entity2->name,found_entity2->num_links);
@@ -596,7 +600,7 @@ word_search (const WORDS w, long nth_order, long quick, char *entity1, char *ent
                                  found_entity2->links[k]->name) == 0)
                             {
                                 printf
-                                    ("*2* Thread id(%d) %s was found common to Entities %s and %s\n",
+                                    ("*2* Thread id(%ld) %s was found common to Entities %s and %s\n",
                                      tid, found_entity2->links[k]->name,
                                      found_entity1->name,
                                      found_entity2->name);
@@ -615,7 +619,7 @@ word_search (const WORDS w, long nth_order, long quick, char *entity1, char *ent
                             (found_entity1->name,
                              found_entity2->links[k]->name) == 0)
                         {
-                            printf ("*2* Thread id(%d) %s was found in %s\n",
+                            printf ("*2* Thread id(%ld) %s was found in %s\n",
                                     tid, found_entity2->links[k]->name,
                                     found_entity2->name);
                             found++;
@@ -649,7 +653,7 @@ word_search (const WORDS w, long nth_order, long quick, char *entity1, char *ent
         break;
 
     default:
-        printf ("Invalid search depth %d\n", nth_order);
+        printf ("Invalid search depth %ld\n", nth_order);
         return (0);
     }
 

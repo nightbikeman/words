@@ -55,12 +55,17 @@ typedef struct entity
 
 
 const char *word_type_str(WORD_TYPE);
-WORDS_STAT load (WORDS * words, const char *filename, const WORD_TYPE type);
+WORDS_STAT initialise (WORDS * words);
+WORDS_STAT load (WORDS words, const char *filename, const WORD_TYPE type);
 WORDS_STAT save (const WORDS words, char *filename);
 WORDS_STAT search (const WORDS words, char *word);
 entity    *find_word (const WORDS words, char *word);
 WORD_TYPE  cat_word (const WORDS words, char *word);
 WORDS_STAT dump (const WORDS words);
 WORDS_STAT dump_json (const WORDS words);
-
+WORDS_STAT dump_formatted (const WORDS w);
+WORDS_STAT dump_txt (const WORDS w);
+WORDS_STAT word_search (const WORDS w, long nth_order, long quick, char *entity1, char *entity2);
+WORDS_STAT word_search_r (const WORDS w, long nth_order, long quick, char *entity1, char *entity2);
+int create_in_txt (int num_lines, char *file);
 #endif
