@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <omp.h>
 #include <errno.h>
+#include <sys/mman.h>
+#include <assert.h>
 
 #include "words.h"
 
@@ -27,11 +29,11 @@
 #define uk_county     15
 #define MAX_WORDS     16
 
-typedef struct book 
+typedef struct book
 {
-	char *filename;
-	char *name;
-	WORD_TYPE type;
+    char *filename;
+    char *name;
+    WORD_TYPE type;
 } BOOK;
 
 WORDS words;
@@ -40,6 +42,25 @@ WORDS words;
 int first = 0;
 char *sentence, *word_pntr;
 char buffer_string[BUFFER_LEN];
+
+char *mmap_null_terminated(int prot, int flags, int fd)
+{
+        off_t pos = lseek(fd, 0, SEEK_CUR);
+	off_t size = lseek(fd, 0, SEEK_END);
+        lseek(fd, pos, SEEK_SET);
+ 
+	char *ptr;
+	int pagesize = getpagesize();
+	if (size % pagesize != 0) {
+		ptr = mmap(NULL, size + 1, prot, flags, fd, 0);
+	} else {
+		int fullsize = size + pagesize;
+		ptr = mmap(NULL, fullsize, PROT_NONE, MAP_PRIVATE | MAP_ANON, 0, 0);
+		ptr = mmap(ptr, fullsize, prot, flags | MAP_FIXED, fd, 0);
+	}
+	assert(ptr[size] == 0);
+	return ptr;
+}
 
 static char
 get_sentence ()
@@ -77,10 +98,10 @@ read_in_file (char *file)
 
     memset (buffer_string, '\0', sizeof (buffer_string));
 
-    int ret_val = fread (buffer_string, sizeof (char), BUFFER_LEN - 1, fd);
-    if (ret_val <= 0)
+    int ret_val = fread(buffer_string, sizeof (char), sizeof(buffer_string)-1, fd);
+    if ((ret_val <= 0) && (ferror(fd)))
     {
-        fputs ("Error while reading", stderr);
+        fprintf(stderr,"Error while reading");
     }
     fclose (fd);
 
@@ -88,10 +109,8 @@ read_in_file (char *file)
 /* Make sure we are dealing with ascii text before looking for sentences */
     for (i = 0; i < nbytes - 1; i++)
     {
-        if (!isascii (buffer_string[i]) ||
-            (iscntrl (buffer_string[i]) && !isspace (buffer_string[i]) &&
-             buffer_string[i] != '\b' && buffer_string[i] != '\032'
-             && buffer_string[i] != '\033'))
+        if (!isascii (buffer_string[i]) || (iscntrl (buffer_string[i]) && !isspace (buffer_string[i]) &&
+             buffer_string[i] != '\b' && buffer_string[i] != '\032' && buffer_string[i] != '\033'))
             return 0;           /* not all ASCII */
     }
 
@@ -115,14 +134,27 @@ read_in_file (char *file)
             (buffer_string[i] == '<') ||
             (buffer_string[i] == '>') ||
             (buffer_string[i] == '[') ||
-            (buffer_string[i] == ']') ||
-            (buffer_string[i] == '"') ||
-            (buffer_string[i] == '\\') || (buffer_string[i] == '|'))
+            (buffer_string[i] == ']') || (buffer_string[i] == '"') || (buffer_string[i] == '\\') || (buffer_string[i] == '|'))
             buffer_string[i] = ' ';
         i++;
     }
 
     return (1);
+}
+void read_files(WORDS w,BOOK *b,int number)
+{
+
+            time_t begin = time (NULL);
+            printf ("Reading input files ");
+
+			int j;
+            for (j = 0; j < number; j++) {
+				printf("%s ",b[j].name);
+                load (w, b[j].filename,b[j].type);
+			}
+            time_t end = time (NULL);
+            printf ("\n");
+            printf ("Reading the data took %f seconds.\n\n", difftime (end, begin));
 }
 
 int
@@ -131,7 +163,6 @@ main (int argc, char **argv)
 
     int ret;
     int index;
-    int i;
     int c;
     int lines_allocated = 128;
     int max_line_len = 100;
@@ -142,34 +173,31 @@ main (int argc, char **argv)
     long cores;
     long iters;
     long intvar;
-    char *cvalue = NULL;
-    struct tm *tm_info;
-    time_t begin, end, timer;
+    time_t begin, end;
 
-    int first = 0;
-    char word_in[1024];
     char word_in_lower[1024];
     char *end_word;
 
+	initialise(&words);
 
-    BOOK books[] = { 
-		{"data/acronyms.txt","acronyms",ACRONYMS},
-		{"data/adjectives.txt","adjectives",ADJECTIVES},
-		{"data/adverbs.txt","adverbs",ADVERBS},
-		{"data/cia_factbook.txt","cia_factbook",CIA_FACTBOOK},
-		{"data/common_stuff.txt","common_stuff",COMMON_STUFF},
-		{"data/compound_words.txt","compound_words",COMPOUND_WORDS},
-		{"data/crosswords.txt","crosswords",CROSSWORDS},
-		{"data/female_names.txt","female_names",FEMALE_NAMES},
-		{"data/male_names.txt","male_names",MALE_NAMES},
-		{"data/nouns.txt","nouns",NOUNS},
-		{"data/places.txt","places",PLACES},
-		{"data/single_words.txt","single_words",SINGLE_WORDS},
-		{"data/truths.txt","truths",TRUTHS},
-		{"data/verbs.txt","verbs",VERBS},
-		{"data/uk_places","verbs",UK_PLACE},
-		{"data/uk_county","verbs",UK_COUNTY},
-	};
+    BOOK books[] = {
+        {"data/acronyms.txt", "acronyms", ACRONYMS},
+        {"data/adjectives.txt", "adjectives", ADJECTIVES},
+        {"data/adverbs.txt", "adverbs", ADVERBS},
+        {"data/cia_factbook.txt", "cia_factbook", CIA_FACTBOOK},
+        {"data/common_stuff.txt", "common_stuff", COMMON_STUFF},
+        {"data/compound_words.txt", "compound_words", COMPOUND_WORDS},
+        {"data/crosswords.txt", "crosswords", CROSSWORDS},
+        {"data/female_names.txt", "female_names", FEMALE_NAMES},
+        {"data/male_names.txt", "male_names", MALE_NAMES},
+        {"data/nouns.txt", "nouns", NOUNS},
+        {"data/places.txt", "places", PLACES},
+        {"data/single_words.txt", "single_words", SINGLE_WORDS},
+        {"data/truths.txt", "truths", TRUTHS},
+        {"data/verbs.txt", "verbs", VERBS},
+        {"data/uk_places", "verbs", UK_PLACE},
+        {"data/uk_county", "verbs", UK_COUNTY},
+    };
 
     char **test_words = (char **) malloc (sizeof (char *) * lines_allocated);
     if (test_words == NULL)
@@ -185,8 +213,7 @@ main (int argc, char **argv)
     {
         if (ENOENT == errno)
         {
-            printf
-                ("There is no directory 'data' in the current dir.  Create it and place in the *.txt files\n");
+            printf ("There is no directory 'data' in the current dir.  Create it and place in the *.txt files\n");
             exit (1);
         }
         if (ENOTDIR == errno)
@@ -207,14 +234,13 @@ main (int argc, char **argv)
 //
             if (argc == 4)
             {
-                if (sscanf (argv[3], "%i", &cores) != 1)
+                if (sscanf (argv[3], "%ld", &cores) != 1)
                 {
                     printf ("Error %s is not an integer", argv[3]);
                     exit (1);
                 }
             }
-            else
-             if (argc != 3)
+            else if (argc != 3)
             {
                 printf ("Run Benchmark: Usage -b iters <threads>");
                 exit (1);
@@ -228,7 +254,7 @@ main (int argc, char **argv)
                 omp_set_num_threads (cores);    // Use core threads for all consecutive parallel regions
 
 
-            if (sscanf (optarg, "%i", &iterations) != 1)
+            if (sscanf (optarg, "%ld", &iterations) != 1)
             {
                 printf ("Error %s is not an integer", optarg);
                 exit (1);
@@ -253,9 +279,7 @@ main (int argc, char **argv)
                     int new_size;
 
                     new_size = lines_allocated * 2;
-                    test_words =
-                        (char **) realloc (test_words,
-                                           sizeof (char *) * new_size);
+                    test_words = (char **) realloc (test_words, sizeof (char *) * new_size);
                     if (test_words == NULL)
                     {
                         fprintf (stderr, "Out of memory.\n");
@@ -273,9 +297,7 @@ main (int argc, char **argv)
                     break;
 
 // Get rid of CR or LF at end of line 
-                for (j = strlen (test_words[i]) - 1;
-                     j >= 0 && (test_words[i][j] == '\n'
-                                || test_words[i][j] == '\r'); j--);
+                for (j = strlen (test_words[i]) - 1; j >= 0 && (test_words[i][j] == '\n' || test_words[i][j] == '\r'); j--);
                 test_words[i][j + 1] = '\0';
             }
             fclose (fp);
@@ -284,20 +306,8 @@ main (int argc, char **argv)
 // Load in words
 //              WORDS truths;
 
-            begin = time (NULL);
-
             printf ("Reading input files ");
-            int j;
-            for (j = 0; j < MAX_WORDS; j++)
-            {
-				printf ("%s ",books[j].name);
-				ret = load (&words, books[j].filename, books[j].type);
-            }
-            printf ("\n");
-
-            end = time (NULL);
-            printf ("The Entity generation took %f seconds to complete.\n\n",
-                    difftime (end, begin));
+			read_files(words,&books[0],MAX_WORDS);
 
             iters = 0;
             int rand1, rand2;
@@ -328,7 +338,7 @@ main (int argc, char **argv)
                     else
                         iterations = iterations / cores;
 
-                    printf ("Running %d iterations \n", iterations);
+                    printf ("Running %ld iterations \n", iterations);
                 }
 
 #pragma omp barrier
@@ -344,14 +354,10 @@ main (int argc, char **argv)
 //              printf("Thread: %d - Testing test_words[%s] and test_words[%s] \n",tid,test_words[rand1],test_words[rand2]);
 
                     nth_order = 1;
-                    ret =
-                        word_search (words, nth_order, FULL,
-                                     test_words[rand1], test_words[rand2]);
+                    ret = word_search (words, nth_order, FULL, test_words[rand1], test_words[rand2]);
 
                     nth_order = 2;
-                    ret =
-                        word_search (words, nth_order, FULL,
-                                     test_words[rand1], test_words[rand2]);
+                    ret = word_search (words, nth_order, FULL, test_words[rand1], test_words[rand2]);
 
                 }
 
@@ -362,9 +368,7 @@ main (int argc, char **argv)
             free (test_words);
 
             end = time (NULL);
-            printf
-                ("The Benchmark took %f wall clock seconds to complete.\n\n",
-                 difftime (end, begin));
+            printf ("The Benchmark took %f wall clock seconds to complete.\n\n", difftime (end, begin));
 
             break;
 
@@ -372,14 +376,13 @@ main (int argc, char **argv)
         case 'c':              // Create an o/p file
             if (argc != 4)
             {
-                printf
-                    ("Create input file: Usage -c inum_lines words_file\n");
+                printf ("Create input file: Usage -c inum_lines words_file\n");
                 exit (1);
             }
 
 // Create a new input words file comprising n lines of random alpha numeric strings
 
-            if (sscanf (optarg, "%i", &intvar) != 1)
+            if (sscanf (optarg, "%ld", &intvar) != 1)
             {
                 printf ("Error - %s is not an integer", optarg);
                 exit (1);
@@ -392,9 +395,7 @@ main (int argc, char **argv)
             if (ret != 0)
                 printf ("The Entity generation failed \n");
             else
-                printf
-                    ("The Entity generation took %f wall clock seconds to complete.\n\n",
-                     difftime (end, begin));
+                printf ("The Entity generation took %f wall clock seconds to complete.\n\n", difftime (end, begin));
 
             break;
 
@@ -411,11 +412,10 @@ main (int argc, char **argv)
             begin = time (NULL);
 
             printf ("Reading input file %s\n", optarg);
-            ret = load (&words, optarg,TRUTHS);
+            ret = load (words, optarg, TRUTHS);
 
             end = time (NULL);
-            printf ("The Entity generation took %f seconds to complete.\n\n",
-                    difftime (end, begin));
+            printf ("The Entity generation took %f seconds to complete.\n\n", difftime (end, begin));
 
 
             if ((ret) == WORDS_SUCCESS)
@@ -427,9 +427,7 @@ main (int argc, char **argv)
                 dump_txt (words);
 
                 end = time (NULL);
-                printf
-                    ("Writing the data out took %f seconds to complete.\n\n",
-                     difftime (end, begin));
+                printf ("Writing the data out took %f seconds to complete.\n\n", difftime (end, begin));
 
             }
             else
@@ -448,7 +446,7 @@ main (int argc, char **argv)
             }
 
 // Read in the words file and search for 2 strings - if there a common word between them ?
-            if (sscanf (optarg, "%i", &nth_order) != 1)
+            if (sscanf (optarg, "%ld", &nth_order) != 1)
             {
                 printf ("Error %s is not an integer", optarg);
                 exit (1);
@@ -457,10 +455,9 @@ main (int argc, char **argv)
 // Load in words
             begin = time (NULL);
             printf ("Reading input file %s\n", books[truths].filename);
-            ret = load (&words, books[truths].filename,TRUTHS);
+            ret = load (words, books[truths].filename, TRUTHS);
             end = time (NULL);
-            printf ("The Entity generation took %f seconds to complete.\n\n",
-                    difftime (end, begin));
+            printf ("The Entity generation took %f seconds to complete.\n\n", difftime (end, begin));
 
 // Now search
             begin = time (NULL);
@@ -472,11 +469,10 @@ main (int argc, char **argv)
             if (ret == 0)
                 printf ("The nth order search failed \n");
             else
-                printf
-                    ("The nth order search took %f seconds to complete and found %d matches.\n\n",
-                     difftime (end, begin), ret);
+                printf ("The nth order search took %f seconds to complete and found %d matches.\n\n", difftime (end, begin), ret);
 
             break;
+
 
         case 't':
             if (argc != 3)
@@ -484,20 +480,7 @@ main (int argc, char **argv)
                 printf ("Usage -t input_file\n");
                 exit (1);
             }
-
-            begin = time (NULL);
-
-            printf ("Reading input files ");
-
-            for (j = 0; j < MAX_WORDS; j++) {
-				printf("%s ",books[j].name);
-                ret = load (&words, books[j].filename,books[j].type);
-	    }
-            printf ("\n");
-            end = time (NULL);
-            printf ("The Entity generation took %f seconds to complete.\n\n",
-                    difftime (end, begin));
-
+			read_files(words,&books[0],MAX_WORDS);
             printf ("Reading input file %s\n", optarg);
             if (read_in_file (optarg))
             {
@@ -512,42 +495,32 @@ main (int argc, char **argv)
                     {
                         if (!isspace (*word_pntr))
                         {
-                            strcpy (word_in, word_pntr);
 
-// Create a lower case version of the word
-                            strcpy (word_in_lower, word_in);
+                            printf ("%s\n", word_pntr);
+							
+							// Create a lower case version of the word
+                            strcpy (word_in_lower, word_pntr);
                             for (i = 0; word_in_lower[i]; i++)
                                 word_in_lower[i] = tolower (word_in_lower[i]);
                             
-                            printf ("%s\n", word_pntr);
 
 // Print the lower case version is there is one
-                            if (strcmp (word_in, word_in_lower) != 0)
-                            {
-                                printf ("%s\n", word_in_lower);
-                                is_lower = 1;
-                            }
-                            else
-                                is_lower = 0;
+                           is_lower = (strcmp (word_pntr, word_in_lower) != 0) ? 1 : 0;
 
 // Just testing... 
-
-                            for (j = 0; j < MAX_WORDS; j++)
-                            {
-                                entity *e=find_word (words, word_in); 
-                                if ( e != NULL )
-                                {
-                                    printf ("Found Entity %s in %s\n", word_in, word_type_str(e->type));
-                                }
-                                if (is_lower)
+							entity *e=find_word (words, word_pntr); 
+							if ( e != NULL )
+							{
+								printf ("Found Entity %s in %s\n", word_pntr, word_type_str(e->type));
+							}
+							if (is_lower)
+							{
+								entity *e=find_word (words, word_in_lower); 
+								if ( e != NULL )
 								{
-									entity *e=find_word (words, word_in_lower); 
-                                    if ( e != NULL )
-                                    {
-                                        printf ("Found Entity %s in %s\n", word_in_lower, word_type_str(e->type));
-                                    }
+									printf ("Found Entity %s in %s\n", word_in_lower, word_type_str(e->type));
 								}
-                            }
+							}
 
                         }
 // Next word
@@ -566,11 +539,9 @@ main (int argc, char **argv)
         case '?':
             fprintf (stderr, "Read input file: Usage <filename>\n");
             fprintf (stderr, "Run Benchmark: Usage -b iters <threads>\n");
-            fprintf (stderr,
-                     "Create input file: Usage -c inum_lines words_file\n");
+            fprintf (stderr, "Create input file: Usage -c inum_lines words_file\n");
             fprintf (stderr, "Output into format: Usage -o input_file\n");
-            fprintf (stderr,
-                     "Search: Usage -s nth_order<1|2> entity1 entity2\n");
+            fprintf (stderr, "Search: Usage -s nth_order<1|2> entity1 entity2\n");
             fprintf (stderr, "Ingest Test file: Usage -t input_file\n");
             exit (1);
 
@@ -585,7 +556,7 @@ main (int argc, char **argv)
         for (index = optind; index < argc; index++)
         {
             printf ("Reading input file %s\n", argv[index]);
-            ret = load (&words, argv[index],TRUTHS);
+            ret = load (words, argv[index], TRUTHS);
             if (ret == WORDS_SUCCESS)
                 printf ("%s read in successfully \n", argv[index]);
             else
