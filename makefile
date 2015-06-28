@@ -4,7 +4,7 @@
 all: x_hash3.o libxhash3.so x_hash3 find_connection find_word
 
 clean:
-	rm -f *.so *.o x_hash2 x_hash3 out.txt
+	rm -f *.so *.o x_hash2 x_hash3 out.txt find_word find_connection 
 
 CPPFLAGS+=$(DEBUG) -Wall
 
