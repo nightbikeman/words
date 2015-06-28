@@ -11,9 +11,6 @@
 
 #include "words.h"
 
-
-
-
 int first = 0;
 char *sentence, *word_pntr;
 char buffer_string[BUFFER_LEN];
@@ -395,8 +392,8 @@ WORDS words;
 
 // Load in words
             begin = time (NULL);
-            printf ("Reading input file %s\n", books[truths].filename);
-            ret = load (words, books[truths].filename, TRUTHS);
+            printf ("Reading input file\n" );
+            ret = read_file(words,truths);
             end = time (NULL);
             printf ("The Entity generation took %f seconds to complete.\n\n", difftime (end, begin));
 
