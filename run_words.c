@@ -11,32 +11,7 @@
 
 #include "words.h"
 
-#define acronyms       0
-#define adjectives     1
-#define adverbs        2
-#define cia_factbook   3
-#define common_stuff   4
-#define compound_words 5
-#define crosswords     6
-#define female_names   7
-#define male_names     8
-#define nouns          9
-#define places        10
-#define single_words  11
-#define truths        12
-#define verbs         13
-#define uk_places     14
-#define uk_county     15
-#define MAX_WORDS     16
 
-typedef struct book
-{
-    char *filename;
-    char *name;
-    WORD_TYPE type;
-} BOOK;
-
-WORDS words;
 
 
 int first = 0;
@@ -141,26 +116,11 @@ read_in_file (char *file)
 
     return (1);
 }
-void read_files(WORDS w,BOOK *b,int number)
-{
-
-            time_t begin = time (NULL);
-            printf ("Reading input files ");
-
-			int j;
-            for (j = 0; j < number; j++) {
-				printf("%s ",b[j].name);
-                load (w, b[j].filename,b[j].type);
-			}
-            time_t end = time (NULL);
-            printf ("\n");
-            printf ("Reading the data took %f seconds.\n\n", difftime (end, begin));
-}
-
 int
 main (int argc, char **argv)
 {
 
+WORDS words;
     int ret;
     int index;
     int c;
@@ -179,25 +139,6 @@ main (int argc, char **argv)
     char *end_word;
 
 	initialise(&words);
-
-    BOOK books[] = {
-        {"data/acronyms.txt", "acronyms", ACRONYMS},
-        {"data/adjectives.txt", "adjectives", ADJECTIVES},
-        {"data/adverbs.txt", "adverbs", ADVERBS},
-        {"data/cia_factbook.txt", "cia_factbook", CIA_FACTBOOK},
-        {"data/common_stuff.txt", "common_stuff", COMMON_STUFF},
-        {"data/compound_words.txt", "compound_words", COMPOUND_WORDS},
-        {"data/crosswords.txt", "crosswords", CROSSWORDS},
-        {"data/female_names.txt", "female_names", FEMALE_NAMES},
-        {"data/male_names.txt", "male_names", MALE_NAMES},
-        {"data/nouns.txt", "nouns", NOUNS},
-        {"data/places.txt", "places", PLACES},
-        {"data/single_words.txt", "single_words", SINGLE_WORDS},
-        {"data/truths.txt", "truths", TRUTHS},
-        {"data/verbs.txt", "verbs", VERBS},
-        {"data/uk_places", "verbs", UK_PLACE},
-        {"data/uk_county", "verbs", UK_COUNTY},
-    };
 
     char **test_words = (char **) malloc (sizeof (char *) * lines_allocated);
     if (test_words == NULL)
@@ -307,7 +248,7 @@ main (int argc, char **argv)
 //              WORDS truths;
 
             printf ("Reading input files ");
-			read_files(words,&books[0],MAX_WORDS);
+			read_all_files(words);
 
             iters = 0;
             int rand1, rand2;
@@ -480,7 +421,7 @@ main (int argc, char **argv)
                 printf ("Usage -t input_file\n");
                 exit (1);
             }
-			read_files(words,&books[0],MAX_WORDS);
+			read_all_files(words);
             printf ("Reading input file %s\n", optarg);
             if (read_in_file (optarg))
             {

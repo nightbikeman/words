@@ -80,3 +80,15 @@ word_type_str (WORD_TYPE type)
     }
     return result;
 }
+
+WORDS_STAT
+read_files (WORDS w, int number)
+{
+    int j;
+    for (j = 0; j < number; j++)
+    {
+        if (load (w, books[j].filename, books[j].type) == WORDS_FAIL)
+			return WORDS_FAIL;
+    }
+	return WORDS_SUCCESS;
+}

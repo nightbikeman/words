@@ -23,6 +23,24 @@ typedef struct words
 } WORDPTR;
 typedef WORDPTR *WORDS;
 
+#define acronyms       0
+#define adjectives     1
+#define adverbs        2
+#define cia_factbook   3
+#define common_stuff   4
+#define compound_words 5
+#define crosswords     6
+#define female_names   7
+#define male_names     8
+#define nouns          9
+#define places        10
+#define single_words  11
+#define truths        12
+#define verbs         13
+#define uk_places     14
+#define uk_county     15
+#define MAX_WORDS     16
+
 typedef enum
 { 
 	UNKNOWN = 0,
@@ -53,6 +71,32 @@ typedef struct entity
     struct entity **links;      //A dymanic array of long pointers to other Root Entities
 } entity;
 
+typedef struct book
+{
+    char *filename;
+    char *name;
+    WORD_TYPE type;
+} BOOK;
+
+const BOOK books[] = {
+        {"data/acronyms.txt", "acronyms", ACRONYMS},
+        {"data/adjectives.txt", "adjectives", ADJECTIVES},
+        {"data/adverbs.txt", "adverbs", ADVERBS},
+        {"data/cia_factbook.txt", "cia_factbook", CIA_FACTBOOK},
+        {"data/common_stuff.txt", "common_stuff", COMMON_STUFF},
+        {"data/compound_words.txt", "compound_words", COMPOUND_WORDS},
+        {"data/crosswords.txt", "crosswords", CROSSWORDS},
+        {"data/female_names.txt", "female_names", FEMALE_NAMES},
+        {"data/male_names.txt", "male_names", MALE_NAMES},
+        {"data/nouns.txt", "nouns", NOUNS},
+        {"data/places.txt", "places", PLACES},
+        {"data/single_words.txt", "single_words", SINGLE_WORDS},
+        {"data/truths.txt", "truths", TRUTHS},
+        {"data/verbs.txt", "verbs", VERBS},
+        {"data/uk_places", "verbs", UK_PLACE},
+        {"data/uk_county", "verbs", UK_COUNTY},
+    };
+
 
 const char *word_type_str(WORD_TYPE);
 WORDS_STAT initialise (WORDS * words);
@@ -68,4 +112,6 @@ WORDS_STAT dump_txt (const WORDS w);
 WORDS_STAT word_search (const WORDS w, long nth_order, long quick, char *entity1, char *entity2);
 WORDS_STAT word_search_r (const WORDS w, long nth_order, long quick, char *entity1, char *entity2);
 int create_in_txt (int num_lines, char *file);
+WORDS_STAT read_files (WORDS w, int number);
+#define read_all_files(a) read_files(a,MAX_WORDS)
 #endif
