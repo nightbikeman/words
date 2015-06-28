@@ -5,6 +5,25 @@
 
 #include "words.h"
 
+const BOOK books[] = {
+        {"acronyms.txt", "acronyms", ACRONYMS},
+        {"adjectives.txt", "adjectives", ADJECTIVES},
+        {"adverbs.txt", "adverbs", ADVERBS},
+        {"cia_factbook.txt", "cia_factbook", CIA_FACTBOOK},
+        {"common_stuff.txt", "common_stuff", COMMON_STUFF},
+        {"compound_words.txt", "compound_words", COMPOUND_WORDS},
+        {"crosswords.txt", "crosswords", CROSSWORDS},
+        {"female_names.txt", "female_names", FEMALE_NAMES},
+        {"male_names.txt", "male_names", MALE_NAMES},
+        {"nouns.txt", "nouns", NOUNS},
+        {"places.txt", "places", PLACES},
+        {"single_words.txt", "single_words", SINGLE_WORDS},
+        {"truths.txt", "truths", TRUTHS},
+        {"verbs.txt", "verbs", VERBS},
+        {"uk_places", "verbs", UK_PLACE},
+        {"uk_county", "verbs", UK_COUNTY},
+    };
+
 const char *
 word_type_str (WORD_TYPE type)
 {
@@ -82,13 +101,23 @@ word_type_str (WORD_TYPE type)
 }
 
 WORDS_STAT
-read_files (WORDS w, int number)
+read_files (WORDS w, int start, int end)
 {
     int j;
-    for (j = 0; j < number; j++)
+	char *data_dir="data/";
+	if ( getenv("DATA_DIR") != NULL )
+		data_dir=getenv("DATA_DIR");
+
+    for (j = start; j < end; j++)
     {
-        if (load (w, books[j].filename, books[j].type) == WORDS_FAIL)
-			return WORDS_FAIL;
+		char filename[1024];
+		sprintf(filename,"%s/%s",data_dir,books[j].filename);	
+		assert(strlen(filename) < sizeof(filename));
+        if (load (w, filename, books[j].type) == WORDS_FAIL)
+		{
+			if ( getenv("LOAD_FAIL_OK") == NULL )
+				return WORDS_FAIL;
+		}
     }
 	return WORDS_SUCCESS;
 }

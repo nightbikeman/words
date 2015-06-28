@@ -1,7 +1,7 @@
 .PHONY: clean
 # This is a test
 
-all: x_hash3.o libxhash3.so x_hash3 find_connection find_word
+all: x_hash3.o libxhash3.so x_hash3 find_connection find_word classify_word
 
 clean:
 	rm -f *.so *.o x_hash2 x_hash3 out.txt find_word find_connection 
@@ -13,7 +13,7 @@ x_hash: x_hash.o
 x_hash2: LDFLAGS=-lhiredis
 x_hash2: x_hash2.o
 
-find_word find_connection x_hash3: LDFLAGS=-L. -lxhash3  -ldhash -fopenmp 
+find_word find_connection x_hash3 classify_word : LDFLAGS=-L. -lxhash3  -ldhash -fopenmp 
 x_hash3: run_words.o 
 
 words.o x_hash3.o:CPPFLAGS=-g -fPIC -fopenmp $(DEBUG) -Wall
@@ -22,6 +22,9 @@ words.o:words.c
 
 find_connection.o:find_connection.c
 find_connection:find_connection.o
+
+classify_word: classify_word.o
+classify_word.o: classify_word.c
 
 find_word.o:find_word.c
 find_word:find_word.o
@@ -36,12 +39,13 @@ libxhash3.so : x_hash3.o words.o
 
 TEST_FILE=test_in.txt
 test: all 
-	LD_LIBRARY_PATH=.  ./find_connection test_in.txt google sky 
-	if LD_LIBRARY_PATH=. ./find_connection test_in.txt google sky1  ; then  false ; fi
-	LD_LIBRARY_PATH=.  ./find_word test_in.txt google
-	if LD_LIBRARY_PATH=. ./find_word test_in.txt google1 ; then  false ; fi
-	if LD_LIBRARY_PATH=. ./find_word test_in.txt  ; then  false ; fi
+	LD_LIBRARY_PATH=.  ./find_connection test_data/truths.txt google sky 
+	if LD_LIBRARY_PATH=. ./find_connection test_data/truths.txt google sky1  ; then  false ; fi
+	LD_LIBRARY_PATH=.  ./find_word test_data/truths.txt google
+	if LD_LIBRARY_PATH=. ./find_word test_data/truths.txt google1 ; then  false ; fi
+	if LD_LIBRARY_PATH=. ./find_word test_data/truths.txt  ; then  false ; fi
 	if LD_LIBRARY_PATH=. ./find_word  ; then  false ; fi
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y  ./classify_word google 
 	@echo PASS
 
 confidence: all 
