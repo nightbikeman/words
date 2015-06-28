@@ -232,6 +232,7 @@ load (WORDS w, const char *file, const WORD_TYPE type)
                 // Initialise this Root Entity:
                 focal_root_entity = add_ent (root, truths->table);
 				focal_root_entity->type=type;
+				printf("et %s %d\n",focal_root_entity->name,focal_root_entity->type);
                 truths->total_num_root_entities++;
             }
             else
@@ -254,6 +255,7 @@ load (WORDS w, const char *file, const WORD_TYPE type)
 
                 //Initialise this Sub Entity:
                 sub_entity = add_ent (word, truths->table);
+				sub_entity->type=type;
                 truths->total_num_sub_entities++;
             }
 
