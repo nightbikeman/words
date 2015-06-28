@@ -3,12 +3,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <assert.h>
 #include <omp.h>
 
 #include "dhash.h"
 #include "words.h"
 
-typedef struct truths_impl
+typedef struct words_impl
 {
     hash_table_t *table;
     int total_num_root_entities;
@@ -155,28 +156,28 @@ WORDS_STAT
 initialise (WORDS * w)
 {
 
-    WORDS_IMPL *truths;
-    truths = malloc (sizeof (*truths));
-    if (truths == NULL)
+    WORDS_IMPL *words;
+    words = malloc (sizeof (*words));
+    if (words == NULL)
     {
-        perror ("failed to create truths structure");
+        perror ("failed to create words structure");
         return WORDS_FAIL;
     }
 
     /* Create a hash table */
     int error;
-    error = hash_create (INITIAL_HASH, &truths->table, delete_callback, NULL);
+    error = hash_create (INITIAL_HASH, &words->table, delete_callback, NULL);
     if (error != HASH_SUCCESS)
     {
         fprintf (stderr, "cannot create hash table (%s)\n",
                  hash_error_string (error));
         return error;
     }
-    truths->num_entities = -1;
-    truths->total_num_root_entities=0;
-    truths->total_num_sub_entities=0;
+    words->num_entities = -1;
+    words->total_num_root_entities=0;
+    words->total_num_sub_entities=0;
 
-    *w = (WORDPTR*)truths;
+    *w = (WORDPTR*)words;
     return WORDS_SUCCESS;
 }
 
@@ -186,21 +187,19 @@ load (WORDS w, const char *file, const WORD_TYPE type)
     char line[1000000];
     FILE *in;
     int line_length;
+#ifdef DEBUG
     int lines = 0;
-    int json = 0;
-    char buffer[26];
-    struct tm *tm_info;
-    time_t timer;
+#endif
 
-    WORDS_IMPL *truths;
+    WORDS_IMPL *words;
     // make the pointer non-opaque
-    truths = (WORDS_IMPL *) w;
+    words = (WORDS_IMPL *) w;
 
     in = fopen (file, "r");
     if (in == NULL)
     {
         printf ("Input file %s not found \n",file);
-        exit (1);
+		return WORDS_FAIL;
     }
 
     while (1 == fscanf (in, "%[^\n]%n\n", line, &line_length))
@@ -208,31 +207,36 @@ load (WORDS w, const char *file, const WORD_TYPE type)
         char *word;
         entity *focal_root_entity = NULL;       //Used when the Root Entity already exists
         char *ptr;
+		strcat(line,",");
         {
             char *root = strtok_r (line, ",", &ptr);
             entity *i = NULL;
+#ifdef DEBUG
             lines++;
+			printf("adding %s as %s\n",root,word_type_str(type));
 
-            if (!json)
                 if ((lines % STAGE) == 0)
                 {
+					time_t timer;
+					char buffer[26];
+					struct tm *tm_info;
                     time (&timer);
                     tm_info = localtime (&timer);
-                    strftime (buffer, 26, "%Y:%m:%d %H:%M:%S", tm_info);
-                    printf
-                        ("%s: Total lines ingested are %d - latest root entry is %s\n",
-                         buffer, lines, root);
+                    strftime (buffer, sizeof(buffer), "%Y:%m:%d %H:%M:%S", tm_info);
+					assert(strlen(buffer) < sizeof(buffer));
+                    printf("%s: Total lines ingested are %d - latest root entry is %s\n", buffer, lines, root);
                 }
+#endif
 
             // First check whether the entry already exists:
-            i = find_entity (root, truths->table);
+            i = find_entity (root, words->table);
 
             if (i == NULL)
             {
                 // Initialise this Root Entity:
-                focal_root_entity = add_ent (root, truths->table);
+                focal_root_entity = add_ent (root, words->table);
 				focal_root_entity->type=type;
-                truths->total_num_root_entities++;
+                words->total_num_root_entities++;
             }
             else
             {
@@ -246,18 +250,18 @@ load (WORDS w, const char *file, const WORD_TYPE type)
         {
             entity *sub_entity;
 
-            truths->num_entities++;
+            words->num_entities++;
             //First check whether the entity already exists :
-            sub_entity = find_entity (word, truths->table);
+            sub_entity = find_entity (word, words->table);
             if (sub_entity == NULL)
             {
 
                 //Initialise this Sub Entity:
-                sub_entity = add_ent (word, truths->table);
+                sub_entity = add_ent (word, words->table);
 
 				/* we don't know what type of word this is */
 				sub_entity->type=UNKNOWN;
-                truths->total_num_sub_entities++;
+                words->total_num_sub_entities++;
             }
 
             // Now link the Sub Entity to the focal_root_entity using the index of the entity arrays :
@@ -268,9 +272,6 @@ load (WORDS w, const char *file, const WORD_TYPE type)
     }
     fclose (in);
 
-    printf ("Number of lines read were %d\n", lines);
-
-
     return WORDS_SUCCESS;
 }
 
@@ -278,13 +279,13 @@ WORDS_STAT
 dump_json (const WORDS w)
 {
     FILE *out;
-    WORDS_IMPL *truths;
+    WORDS_IMPL *words;
     // make the pointer non-opaque
-    truths = (WORDS_IMPL *) w;
+    words = (WORDS_IMPL *) w;
 
     /* Visit each entry using iterator object */
     struct hash_iter_context_t *iter;
-    iter = new_hash_iter_context (truths->table);
+    iter = new_hash_iter_context (words->table);
     hash_entry_t *entry;
     int i = 0;
 
@@ -322,13 +323,13 @@ dump_formatted (const WORDS w)
 
     int j;
     FILE *out;
-    WORDS_IMPL *truths;
+    WORDS_IMPL *words;
     // make the pointer non-opaque
-    truths = (WORDS_IMPL *) w;
+    words = (WORDS_IMPL *) w;
 
     /* Visit each entry using iterator object */
     struct hash_iter_context_t *iter;
-    iter = new_hash_iter_context (truths->table);
+    iter = new_hash_iter_context (words->table);
     hash_entry_t *entry;
 
     out = fopen ("data/entities.out", "wb");
@@ -350,9 +351,9 @@ dump_formatted (const WORDS w)
     free (iter);
 
     fprintf (out, "\nThe total number of Root Entities are %d\n",
-             truths->total_num_root_entities);
+             words->total_num_root_entities);
     fprintf (out, "The total number of Sub Entities are %d\n",
-             truths->total_num_sub_entities);
+             words->total_num_sub_entities);
 
     fclose (out);
 
@@ -365,13 +366,13 @@ dump_txt (const WORDS w)
 
     int j;
     FILE *out;
-    WORDS_IMPL *truths;
+    WORDS_IMPL *words;
     // make the pointer non-opaque
-    truths = (WORDS_IMPL *) w;
+    words = (WORDS_IMPL *) w;
 
     /* Visit each entry using iterator object */
     struct hash_iter_context_t *iter;
-    iter = new_hash_iter_context (truths->table);
+    iter = new_hash_iter_context (words->table);
     hash_entry_t *entry;
 
     out = fopen ("data/entities.txt", "wb");
@@ -454,9 +455,9 @@ word_search (const WORDS w, long nth_order, long quick, char *entity1, char *ent
     int found = 0;
     long nthreads __attribute__ ((unused)) ;
     long tid;
-    WORDS_IMPL *truths;
+    WORDS_IMPL *words;
     // make the pointer non-opaque
-    truths = (WORDS_IMPL *) w;
+    words = (WORDS_IMPL *) w;
     entity *found_entity1, *found_entity2;
 
     tid = omp_get_thread_num ();
@@ -476,13 +477,13 @@ word_search (const WORDS w, long nth_order, long quick, char *entity1, char *ent
         // A-bomb was found in => abandoned
         //
 
-        found_entity1 = find_entity (entity1, truths->table);
+        found_entity1 = find_entity (entity1, words->table);
         if (found_entity1 != NULL)
         {
             if (VERBOSE)
                 printf ("Found Entity %s\n", entity1);
 
-            found_entity2 = find_entity (entity2, truths->table);
+            found_entity2 = find_entity (entity2, words->table);
             if (found_entity2 != NULL)
             {
                 if (VERBOSE)
@@ -559,13 +560,13 @@ word_search (const WORDS w, long nth_order, long quick, char *entity1, char *ent
         // A-bomb => bob was found in abandoned => bob
         //
 
-        found_entity1 = find_entity (entity1, truths->table);
+        found_entity1 = find_entity (entity1, words->table);
         if (found_entity1 != NULL)
         {
             if (VERBOSE)
                 printf ("Found Entity %s\n", entity1);
 
-            found_entity2 = find_entity (entity2, truths->table);
+            found_entity2 = find_entity (entity2, words->table);
             if (found_entity2 != NULL)
             {
                 if (VERBOSE)
@@ -667,12 +668,12 @@ word_search (const WORDS w, long nth_order, long quick, char *entity1, char *ent
 entity *
 find_word (const WORDS w, char *word)
 {
-    WORDS_IMPL *truths;
+    WORDS_IMPL *words;
     // make the pointer non-opaque
-    truths = (WORDS_IMPL *) w;
+    words = (WORDS_IMPL *) w;
 
     /* Visit each entry using iterator object */
-    entity *e = find_entity (word, truths->table);
+    entity *e = find_entity (word, words->table);
 
     return e;
 }
