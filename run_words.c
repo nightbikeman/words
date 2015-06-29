@@ -132,7 +132,6 @@ WORDS words;
     long intvar;
     time_t begin, end;
 
-    char word_in_lower[1024];
     char *end_word;
 
 	initialise(&words);
@@ -434,10 +433,12 @@ WORDS words;
                         if (!isspace (*word_pntr))
                         {
 
+							char word_in_lower[1024];
                             printf ("%s\n", word_pntr);
 							
 							// Create a lower case version of the word
-                            strcpy (word_in_lower, word_pntr);
+                            strncpy (word_in_lower,word_pntr,sizeof(word_in_lower));
+							word_in_lower[sizeof(word_in_lower)-1]=0;
                             for (i = 0; word_in_lower[i]; i++)
                                 word_in_lower[i] = tolower (word_in_lower[i]);
                             
