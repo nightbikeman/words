@@ -47,7 +47,7 @@ word_type_str (WORD_TYPE type)
             strcat(result, "adjective ");
             break;
         case ADVERBS:
-            strcat(result, "adverbs");
+            strcat(result, "adverbs ");
             break;
         case CIA_FACTBOOK:
             strcat(result, "CIA_factbook ");
