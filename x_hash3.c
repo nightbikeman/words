@@ -184,9 +184,7 @@ initialise (WORDS * w)
 WORDS_STAT
 load (WORDS w, const char *file, const WORD_TYPE type)
 {
-    char line[1000000];
     FILE *in;
-    int line_length;
 #ifdef DEBUG
     int lines = 0;
 #endif
@@ -198,77 +196,89 @@ load (WORDS w, const char *file, const WORD_TYPE type)
     in = fopen (file, "r");
     if (in == NULL)
     {
-        printf ("Input file %s not found \n",file);
+        fprintf(stderr,"Input file %s not found \n",file);
 		return WORDS_FAIL;
     }
 
-    while (1 == fscanf (in, "%[^\n]%n\n", line, &line_length))
-    {                           //read one line
-        char *word;
-        entity *focal_root_entity = NULL;       //Used when the Root Entity already exists
-        char *ptr;
-		strcat(line,",");
-        {
-            char *root = strtok_r (line, ",", &ptr);
-            entity *i = NULL;
+    while (!feof(in))
+    {   
+		//read one line
+		char line[1000000];
+		int line_length;
+		
+		if (1 == fscanf (in, "%[^\n]%n\n", line, &line_length))
+		{
+			char *word;
+			entity *focal_root_entity = NULL;       //Used when the Root Entity already exists
+			char *ptr;
+			line[line_length+1]=0;
+			{
+				char *root = strtok_r (line, ",", &ptr);
+				entity *i = NULL;
 #ifdef DEBUG
-            lines++;
-			printf("adding %s as %s\n",root,word_type_str(type));
+				lines++;
+				printf("adding %s as %s\n",root,word_type_str(type));
 
-                if ((lines % STAGE) == 0)
-                {
-					time_t timer;
-					char buffer[26];
-					struct tm *tm_info;
-                    time (&timer);
-                    tm_info = localtime (&timer);
-                    strftime (buffer, sizeof(buffer), "%Y:%m:%d %H:%M:%S", tm_info);
-					assert(strlen(buffer) < sizeof(buffer));
-                    printf("%s: Total lines ingested are %d - latest root entry is %s\n", buffer, lines, root);
-                }
+					if ((lines % STAGE) == 0)
+					{
+						time_t timer;
+						char buffer[26];
+						struct tm *tm_info;
+						time (&timer);
+						tm_info = localtime (&timer);
+						strftime (buffer, sizeof(buffer), "%Y:%m:%d %H:%M:%S", tm_info);
+						assert(strlen(buffer) < sizeof(buffer));
+						printf("%s: Total lines ingested are %d - latest root entry is %s\n", buffer, lines, root);
+					}
 #endif
 
-            // First check whether the entry already exists:
-            i = find_entity (root, words->table);
+				// First check whether the entry already exists:
+				i = find_entity (root, words->table);
 
-            if (i == NULL)
-            {
-                // Initialise this Root Entity:
-                focal_root_entity = add_ent (root, words->table);
-				focal_root_entity->type=type;
-                words->total_num_root_entities++;
-            }
-            else
-            {
+				if (i == NULL)
+				{
+					// Initialise this Root Entity:
+					focal_root_entity = add_ent (root, words->table);
+					focal_root_entity->type=type;
+					words->total_num_root_entities++;
+				}
+				else
+				{
 
-                focal_root_entity = i;
-				focal_root_entity->type|=type;
-            }
-        }
+					focal_root_entity = i;
+					focal_root_entity->type|=type;
+				}
+			}
 
-        for (; (word = strtok_r (NULL, ",", &ptr));)
-        {
-            entity *sub_entity;
+			for (; (word = strtok_r (NULL, ",", &ptr));)
+			{
+				entity *sub_entity;
 
-            words->num_entities++;
-            //First check whether the entity already exists :
-            sub_entity = find_entity (word, words->table);
-            if (sub_entity == NULL)
-            {
+				words->num_entities++;
+				//First check whether the entity already exists :
+				sub_entity = find_entity (word, words->table);
+				if (sub_entity == NULL)
+				{
 
-                //Initialise this Sub Entity:
-                sub_entity = add_ent (word, words->table);
+					//Initialise this Sub Entity:
+					sub_entity = add_ent (word, words->table);
 
+					words->total_num_sub_entities++;
+				}
+
+				// Now link the Sub Entity to the focal_root_entity using the index of the entity arrays :
+				add_link (focal_root_entity, sub_entity);
+				add_link (sub_entity, focal_root_entity);
 				/* we don't know what type of word this is */
-				sub_entity->type=UNKNOWN;
-                words->total_num_sub_entities++;
-            }
+				sub_entity->type=TRUTHS|NOUNS;
 
-            // Now link the Sub Entity to the focal_root_entity using the index of the entity arrays :
-            add_link (focal_root_entity, sub_entity);
-            add_link (sub_entity, focal_root_entity);
-
-        }
+			}
+		}
+		else
+		{
+			// read the blank line which I think is the only way we get into this block!
+			fscanf(in,"\n");
+		}
     }
     fclose (in);
 
