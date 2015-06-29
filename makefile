@@ -45,7 +45,8 @@ test: all
 	if LD_LIBRARY_PATH=. ./find_word test_data/truths.txt google1 ; then  false ; fi
 	if LD_LIBRARY_PATH=. ./find_word test_data/truths.txt  ; then  false ; fi
 	if LD_LIBRARY_PATH=. ./find_word  ; then  false ; fi
-	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y  ./classify_word google 
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y  ./classify_word google 2> /dev/null | fgrep "google noun truth"
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y  ./classify_word hippo 2> /dev/null | fgrep "hippo noun truth"
 	@echo PASS
 
 confidence: all 
