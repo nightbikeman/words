@@ -49,3 +49,4 @@ weasel
 web
 wild animal
 yahoo
+zugzwangs
