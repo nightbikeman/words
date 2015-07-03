@@ -136,7 +136,6 @@ WORDS words;
     int max_line_len = 100;
     int tid, nthreads;
     int is_lower;
-    int found_word;
     long nth_order;
     long iterations;
     long cores;
@@ -453,7 +452,6 @@ WORDS words;
 							word_in_lower[sizeof(word_in_lower)-1]=0;
                             for (i = 0; word_in_lower[i]; i++)
                                 word_in_lower[i] = tolower (word_in_lower[i]);
-				found_word=0;                            
 
 // Print the lower case version is there is one
                            is_lower = (strcmp (word_pntr, word_in_lower) != 0) ? 1 : 0;
