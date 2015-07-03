@@ -91,23 +91,34 @@ read_in_file (char *file)
     i = 0;
     while (buffer_string[i] != '\0')
     {
-        if ((buffer_string[i] == ',') ||
-            (buffer_string[i] == ';') ||
-            (buffer_string[i] == ':') ||
-            (buffer_string[i] == '_') ||
-            (buffer_string[i] == '#') ||
-            (buffer_string[i] == '~') ||
-            (buffer_string[i] == '!') ||
-            (buffer_string[i] == '*') ||
-            (buffer_string[i] == '(') ||
-            (buffer_string[i] == ')') ||
-            (buffer_string[i] == '{') ||
-            (buffer_string[i] == '}') ||
-            (buffer_string[i] == '<') ||
-            (buffer_string[i] == '>') ||
-            (buffer_string[i] == '[') ||
-            (buffer_string[i] == ']') || (buffer_string[i] == '"') || (buffer_string[i] == '\\') || (buffer_string[i] == '|'))
-            buffer_string[i] = ' ';
+        if (strncmp(&buffer_string[i],",",1)== 0  ||
+            strncmp(&buffer_string[i],";",1)== 0  ||
+            strncmp(&buffer_string[i],":",1)== 0  ||
+            strncmp(&buffer_string[i],"_",1)== 0  ||
+            strncmp(&buffer_string[i],"#",1)== 0  ||
+            strncmp(&buffer_string[i],"*",1)== 0  ||
+            strncmp(&buffer_string[i],"~",1)== 0  ||
+            strncmp(&buffer_string[i],"!",1)== 0  ||
+            strncmp(&buffer_string[i],"*",1)== 0  ||
+            strncmp(&buffer_string[i],"(",1)== 0  ||
+            strncmp(&buffer_string[i],")",1)== 0  ||
+            strncmp(&buffer_string[i],"{",1)== 0  ||
+            strncmp(&buffer_string[i],"}",1)== 0  ||
+            strncmp(&buffer_string[i],"[",1)== 0  ||
+            strncmp(&buffer_string[i],"]",1)== 0  ||
+            strncmp(&buffer_string[i],"<",1)== 0  ||
+            strncmp(&buffer_string[i],">",1)== 0  ||
+            strncmp(&buffer_string[i],"`",1)== 0  ||
+            strncmp(&buffer_string[i],"'",1)== 0  ||
+            strncmp(&buffer_string[i],"\"",1)== 0  ||
+            strncmp(&buffer_string[i],"\\",1)== 0 ||
+            strncmp(&buffer_string[i],"\n",1)== 0 ||
+            strncmp(&buffer_string[i],"\r",1)== 0 ||
+            strncmp(&buffer_string[i],"\t",1)== 0 ||
+            strncmp(&buffer_string[i],"/",1)== 0 ||
+            strncmp(&buffer_string[i],"|",1)== 0 ) 
+            	buffer_string[i] = ' ';
+	     
         i++;
     }
 
@@ -125,6 +136,7 @@ WORDS words;
     int max_line_len = 100;
     int tid, nthreads;
     int is_lower;
+    int found_word;
     long nth_order;
     long iterations;
     long cores;
@@ -424,7 +436,7 @@ WORDS words;
 
                 while (get_sentence ())
                 {
-//              printf( "%s\n", sentence );
+              printf( "sentence is %s\n", sentence );
                     word_pntr = strtok_r (sentence, " ", &end_word);
 
                     printf ("\nBegin sentence \n");
@@ -441,7 +453,7 @@ WORDS words;
 							word_in_lower[sizeof(word_in_lower)-1]=0;
                             for (i = 0; word_in_lower[i]; i++)
                                 word_in_lower[i] = tolower (word_in_lower[i]);
-                            
+				found_word=0;                            
 
 // Print the lower case version is there is one
                            is_lower = (strcmp (word_pntr, word_in_lower) != 0) ? 1 : 0;
