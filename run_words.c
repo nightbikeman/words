@@ -447,10 +447,12 @@ WORDS words;
                            is_lower = (strcmp (word_pntr, word_in_lower) != 0) ? 1 : 0;
 
 // Just testing... 
+						   int found=0;
 							entity *e=find_word (words, word_pntr); 
 							if ( e != NULL )
 							{
 								printf ("Found Entity \"%s\" in %s\n", word_pntr, word_type_str(e->type));
+								found=1;
 							}
 							if (is_lower)
 							{
@@ -458,8 +460,10 @@ WORDS words;
 								if ( e != NULL )
 								{
 									printf ("Found Entity \"%s\" in %s\n", word_in_lower, word_type_str(e->type));
+									found=1;
 								}
 							}
+							if ( ! found ) printf ("NOT Found Entity \"%s\"", word_pntr);
 
                         }
 // Next word
