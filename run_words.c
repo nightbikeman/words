@@ -5,8 +5,10 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <omp.h>
+#include <dirent.h>
 #include <errno.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 #include <assert.h>
 
 #include "words.h"
@@ -58,14 +60,13 @@ read_in_file (char *file)
 {
 
     int i;
-    int nbytes = 100;
 
     FILE *fd = fopen (file, "r");
 
     if (NULL == fd)
     {
-        fputs ("Error while opening", stderr);
-        return 1;
+        printf ("Error while opening %s", file);
+        exit(1);
     }
 
     memset (buffer_string, '\0', sizeof (buffer_string));
@@ -73,18 +74,14 @@ read_in_file (char *file)
     int ret_val = fread(buffer_string, sizeof (char), sizeof(buffer_string)-1, fd);
     if ((ret_val <= 0) && (ferror(fd)))
     {
-        fprintf(stderr,"Error while reading");
+        printf ("Error while reading %s", file);
+	exit(1); 
     }
+
     fclose (fd);
 
+    printf("Number of bytes read were %d\n",ret_val);
 
-/* Make sure we are dealing with ascii text before looking for sentences */
-    for (i = 0; i < nbytes - 1; i++)
-    {
-        if (!isascii (buffer_string[i]) || (iscntrl (buffer_string[i]) && !isspace (buffer_string[i]) &&
-             buffer_string[i] != '\b' && buffer_string[i] != '\032' && buffer_string[i] != '\033'))
-            return 0;           /* not all ASCII */
-    }
 
 /* Change all commas, semi colons, colons and double quotes etc to spaces */
 
@@ -121,9 +118,86 @@ read_in_file (char *file)
 	     
         i++;
     }
-
     return (1);
 }
+
+int
+scan_file(const WORDS wds, char *file)
+{
+
+    int is_lower;
+    int found_word;
+    int found_count = 0;
+    int not_found_count = 0;
+    int i;
+    char *end_word;
+
+    if(VERBOSE)printf("Reading input file %s\n",  file);
+
+    if (read_in_file (file)) 
+    {
+	first=0;
+        while (get_sentence ())
+        {
+              if(VERBOSE)printf( "sentence is %s\n", sentence );
+              word_pntr = strtok_r (sentence, " ", &end_word);
+
+              if(VERBOSE)printf ("\nBegin sentence \n");
+              while (word_pntr != NULL)
+              {
+                    if (!isspace (*word_pntr))
+                    {
+
+			char word_in_lower[1024];
+                        if(VERBOSE)printf ("%s\n", word_pntr);
+							
+// Create a lower case version of the word
+                        strncpy (word_in_lower,word_pntr,sizeof(word_in_lower));
+			word_in_lower[sizeof(word_in_lower)-1]=0;
+                        for (i = 0; word_in_lower[i]; i++)
+                                word_in_lower[i] = tolower (word_in_lower[i]);
+
+	                found_word=0;                            
+
+// Print the lower case version is there is one
+                        is_lower = (strcmp (word_pntr, word_in_lower) != 0) ? 1 : 0;
+
+			entity *e=find_word (wds, word_pntr); 
+			if ( e != NULL )
+			{
+				if(VERBOSE)printf ("Found Entity \"%s\" in %s\n", word_pntr, word_type_str(e->type));
+				found_word++;
+				found_count++;
+			}
+			if (is_lower)
+			{
+				e=find_word (wds, word_in_lower); 
+				if ( e != NULL )
+				{
+					if(VERBOSE)printf ("Found Entity \"%s\" in %s\n", word_in_lower, word_type_str(e->type));
+					found_word++;
+					found_count++;
+				}
+			}
+			if (found_word == 0) {
+				if(VERBOSE)printf ("*** Entity \"%s\" was NOT found\n", word_in_lower);
+				not_found_count++;
+			}
+                    }
+// Next word
+                    word_pntr = strtok_r (NULL, " ", &end_word);
+                }
+                if(VERBOSE)printf ("End sentence \n");
+
+        }
+
+    } else printf("%s An error occured from read_in_file() \n",file);
+
+    printf("The number of words found were %d and NOT found were %d\n",found_count,not_found_count);
+
+    return(0);
+}
+
 int
 main (int argc, char **argv)
 {
@@ -135,16 +209,16 @@ WORDS words;
     int lines_allocated = 128;
     int max_line_len = 100;
     int tid, nthreads;
-    int is_lower;
-    int found_word;
     long nth_order;
     long iterations;
     long cores;
     long iters;
     long intvar;
     time_t begin, end;
+    char *dir_path = NULL;
 
-    char *end_word;
+    DIR           *d;
+    struct dirent *dir;
 
 	initialise(&words);
 
@@ -424,70 +498,76 @@ WORDS words;
 
 
         case 't':
+
             if (argc != 3)
             {
-                printf ("Usage -t input_file\n");
+                printf ("Usage -t input_file | input_directory\n");
                 exit (1);
             }
-			read_all_files(words);
-            printf ("Reading input file %s\n", optarg);
-            if (read_in_file (optarg))
-            {
 
-                while (get_sentence ())
-                {
-              printf( "sentence is %s\n", sentence );
-                    word_pntr = strtok_r (sentence, " ", &end_word);
+// Check whether the specifier is a file or directory
+            struct stat s;
+            int err = stat(optarg, &s);
 
-                    printf ("\nBegin sentence \n");
-                    while (word_pntr != NULL)
-                    {
-                        if (!isspace (*word_pntr))
-                        {
+            if(-1 == err) {
+                  if(ENOENT == errno) {
+			printf("%s file or directory does not exist\n",optarg);
+			exit(1);
+                  } else {
+                         perror("stat");
+                         exit(1);
+                  }
+            } else {
 
-							char word_in_lower[1024];
-                            printf ("%s\n", word_pntr);
-							
-							// Create a lower case version of the word
-                            strncpy (word_in_lower,word_pntr,sizeof(word_in_lower));
-							word_in_lower[sizeof(word_in_lower)-1]=0;
-                            for (i = 0; word_in_lower[i]; i++)
-                                word_in_lower[i] = tolower (word_in_lower[i]);
-				found_word=0;                            
+// If we have a valid file or directory
+                  if(S_ISDIR(s.st_mode)) {
+                         printf("An input directory was detected - scanning files: \n");
+                         d = opendir(optarg);
 
-// Print the lower case version is there is one
-                           is_lower = (strcmp (word_pntr, word_in_lower) != 0) ? 1 : 0;
+// Now read in the input files from the input dir and process....
+                         if (d)
+  	                 {
+            		 	read_all_files(words);
 
-// Just testing... 
-							entity *e=find_word (words, word_pntr); 
-							if ( e != NULL )
-							{
-								printf ("Found Entity \"%s\" in %s\n", word_pntr, word_type_str(e->type));
-								found_word++;
-							}
-							if (is_lower)
-							{
-								e=find_word (words, word_in_lower); 
-								if ( e != NULL )
-								{
-									printf ("Found Entity \"%s\" in %s\n", word_in_lower, word_type_str(e->type));
-									found_word++;
-								}
-							}
-							if (found_word == 0)
-								printf ("*** Entity \"%s\" was NOT found\n", word_in_lower);
+// for each file in the directory...
+    		                while ((dir = readdir(d)) != NULL)
+    		                {
+// Get rid of . and ..
+				      	if ((strncmp(dir->d_name,".",1) != 0) && (strncmp(dir->d_name,"..",2) != 0))  {
+// Combine OPTARG and d_name as a PATH
 
-                        }
-// Next word
-                        word_pntr = strtok_r (NULL, " ", &end_word);
-                    }
-                    printf ("End sentence \n");
-                }
-                break;
+                                                dir_path = realloc(dir_path, (strlen(optarg) + strlen("/") + strlen(dir->d_name) + 1) * sizeof(char));
 
+                                                if (!dir_path) {
+                                                       printf("Path allocation failed \n");
+                                                       exit(1);
+                                                }
+						int size_path=sizeof(dir_path);
+    						memset (dir_path, '\0', size_path);
+                                                strcat(dir_path, optarg);
+                                                strcat(dir_path, "/");
+                                                strcat(dir_path, dir->d_name);
+
+      			              		printf("Scanning input file: %s\n", dir_path);
+			 	      		scan_file(words,dir_path);
+					}
+    		                }
+
+    		                closedir(d);
+  	                 }
+
+
+                  } else {
+
+// The input file exists so process....
+            		 read_all_files(words);
+
+                         printf("An input file %s was detected; Scanning\n",optarg);
+			 scan_file(words,optarg);
+                  }
             }
-            else
-                printf ("Input file was binary\n");
+
+
 
             break;
 
@@ -497,7 +577,7 @@ WORDS words;
             fprintf (stderr, "Create input file: Usage -c inum_lines words_file\n");
             fprintf (stderr, "Output into format: Usage -o input_file\n");
             fprintf (stderr, "Search: Usage -s nth_order<1|2> entity1 entity2\n");
-            fprintf (stderr, "Ingest Test file: Usage -t input_file\n");
+            fprintf (stderr, "Ingest Test file: Usage -t input_file | input_directory\n");
             exit (1);
 
         default:
