@@ -39,8 +39,7 @@ typedef WORDPTR *WORDS;
 #define verbs         13
 #define uk_places     14
 #define uk_county     15
-#define learnt_words  16
-#define MAX_WORDS     17
+#define MAX_WORDS     16
 
 typedef enum
 { 
@@ -60,8 +59,7 @@ typedef enum
     TRUTHS = 4096,
     VERBS = 8192,
     UK_PLACE = 16384,
-    UK_COUNTY = 32768,
-    LEARNT_WORDS = 65536
+    UK_COUNTY = 32768
 } WORD_TYPE;
 
 typedef struct entity
