@@ -68,4 +68,7 @@ confidence: all
 	LD_LIBRARY_PATH=. time ./x_hash3 -t doc_file
 	@echo ====================================
 	@echo
+	LD_LIBRARY_PATH=. ./x_hash3  -t wiki-extractor/output
+	@echo ====================================
+	@echo
 
