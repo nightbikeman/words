@@ -44,7 +44,7 @@ typedef WORDPTR *WORDS;
 
 typedef enum
 { 
-	UNKNOWN = 0,
+    UNKNOWN = 0,
     ACRONYMS = 1,
     ADJECTIVES = 2,
     ADVERBS = 4,
@@ -84,6 +84,7 @@ typedef struct book
 const char *word_type_str(WORD_TYPE);
 WORDS_STAT initialise (WORDS * words);
 WORDS_STAT load (WORDS words, const char *filename, const WORD_TYPE type);
+WORDS_STAT learn_word (WORDS words, char *root, const WORD_TYPE type);
 WORDS_STAT save (const WORDS words, char *filename);
 WORDS_STAT search (const WORDS words, char *word);
 entity    *find_word (const WORDS words, char *word);

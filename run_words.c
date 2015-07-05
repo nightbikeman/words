@@ -130,6 +130,7 @@ scan_file(const WORDS wds, char *file)
     int found_count = 0;
     int not_found_count = 0;
     int i;
+    int ret;
     char *end_word;
 
     if(VERBOSE)printf("Reading input file %s\n",  file);
@@ -180,8 +181,14 @@ scan_file(const WORDS wds, char *file)
 				}
 			}
 			if (found_word == 0) {
-				if(VERBOSE)printf ("*** Entity \"%s\" was NOT found\n", word_in_lower);
+				if(VERBOSE)printf ("*** Entity \"%s\" was NOT found\n", word_pntr);
 				not_found_count++;
+            			ret = learn_word (wds, word_pntr, LEARNT_WORDS);
+            			if (ret == WORDS_SUCCESS) {
+                			if(VERBOSE) printf ("New word \"%s\"added into LEARNT_WORDS successfully \n", word_pntr);
+				}
+            			else
+                			printf ("Error adding new word \"%s\" \n", word_pntr);
 			}
                     }
 // Next word

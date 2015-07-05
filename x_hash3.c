@@ -286,6 +286,24 @@ load (WORDS w, const char *file, const WORD_TYPE type)
 }
 
 WORDS_STAT
+learn_word (WORDS w, char *root, const WORD_TYPE type)
+{
+
+    WORDS_IMPL *words;
+    // make the pointer non-opaque
+    words = (WORDS_IMPL *) w;
+
+    entity *focal_root_entity = NULL;       //Used when the Root Entity already exists
+
+// Initialise this Root Entity:
+    focal_root_entity = add_ent (root, words->table);
+    focal_root_entity->type=type;
+    words->total_num_root_entities++;
+
+    return WORDS_SUCCESS;
+}
+
+WORDS_STAT
 dump_json (const WORDS w)
 {
     FILE *out;
