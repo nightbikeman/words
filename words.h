@@ -84,7 +84,8 @@ typedef struct book
 const char *word_type_str(WORD_TYPE);
 WORDS_STAT initialise (WORDS * words);
 WORDS_STAT load (WORDS words, const char *filename, const WORD_TYPE type);
-WORDS_STAT learn_word (WORDS words, char *root, const WORD_TYPE type);
+WORDS_STAT learn_word_root (WORDS words, char *root, const WORD_TYPE type);
+WORDS_STAT learn_word_sub (WORDS words, char *word, const WORD_TYPE type, char *root);
 WORDS_STAT save (const WORDS words, char *filename);
 WORDS_STAT search (const WORDS words, char *word);
 entity    *find_word (const WORDS words, char *word);
