@@ -14,6 +14,8 @@
 #include "words.h"
 
 int first = 0;
+long total_found_count=0;
+long total_not_found_count=0;
 char *sentence, *word_pntr;
 char buffer_string[BUFFER_LEN];
 
@@ -183,12 +185,20 @@ scan_file(const WORDS wds, char *file)
 			if (found_word == 0) {
 				if(VERBOSE)printf ("*** Entity \"%s\" was NOT found\n", word_pntr);
 				not_found_count++;
-            			ret = learn_word (wds, word_pntr, LEARNT_WORDS);
+// Add a new root entry in
+            			ret = learn_word_root (wds, word_pntr, LEARNT_WORDS);
             			if (ret == WORDS_SUCCESS) {
                 			if(VERBOSE) printf ("New word \"%s\"added into LEARNT_WORDS successfully \n", word_pntr);
 				}
             			else
                 			printf ("Error adding new word \"%s\" \n", word_pntr);
+
+// If also lower case add in a new sub entity
+				if (is_lower)
+            			ret = learn_word_sub (wds, word_in_lower, LEARNT_WORDS, word_pntr);
+            			if (ret == WORDS_SUCCESS) {
+                			if(VERBOSE) printf ("New word \"%s\"added into LEARNT_WORDS successfully \n", word_pntr);
+				}
 			}
                     }
 // Next word
@@ -201,6 +211,8 @@ scan_file(const WORDS wds, char *file)
     } else printf("%s An error occured from read_in_file() \n",file);
 
     printf("The number of words found were %d and NOT found were %d\n",found_count,not_found_count);
+    total_found_count=total_found_count+found_count;
+    total_not_found_count=total_not_found_count+not_found_count;
 
     return(0);
 }
@@ -534,6 +546,7 @@ WORDS words;
 // Now read in the input files from the input dir and process....
                          if (d)
   	                 {
+                		begin = time (NULL);
             		 	read_all_files(words);
 
 // for each file in the directory...
@@ -561,16 +574,43 @@ WORDS words;
     		                }
 
     		                closedir(d);
+                		end = time (NULL);
   	                 }
+                	 printf ("Processing the input directory took %f seconds to complete.\n\n", difftime (end, begin));
 
+    			 printf("\n The total number of words found were %ld \n",total_found_count);
+    			 printf("\n The total number of words NOT found were %ld \n",total_not_found_count);
+
+                	 begin = time (NULL);
+
+                	 dump_json (words);
+                	 dump_formatted (words);
+                	 dump_txt (words);
+
+                	 end = time (NULL);
+                	 printf ("Writing the data out took %f seconds to complete.\n\n", difftime (end, begin));
 
                   } else {
 
 // The input file exists so process....
+                	 begin = time (NULL);
             		 read_all_files(words);
 
                          printf("An input file %s was detected; Scanning\n",optarg);
 			 scan_file(words,optarg);
+
+                 	 end = time (NULL);
+                	 printf ("Processing the input file took %f seconds to complete.\n\n", difftime (end, begin));
+
+                         begin = time (NULL);
+
+                         dump_json (words);
+                         dump_formatted (words);
+                         dump_txt (words);
+
+                         end = time (NULL);
+                         printf ("Writing the data out took %f seconds to complete.\n\n", difftime (end, begin));
+
                   }
             }
 
