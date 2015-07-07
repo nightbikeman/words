@@ -39,11 +39,19 @@ typedef WORDPTR *WORDS;
 #define verbs         13
 #define uk_places     14
 #define uk_county     15
-#define MAX_WORDS     16
+#define learnt_words  16
+#define MAX_WORDS     17
+
+typedef enum{
+	RELATION_UNKNOWN,
+	RELATION_IS_A,
+	RELATION_HAS,
+	RELATION_LIKES
+} RELATION_TYPE;
 
 typedef enum
 { 
-	UNKNOWN = 0,
+    UNKNOWN = 0,
     ACRONYMS = 1,
     ADJECTIVES = 2,
     ADVERBS = 4,
@@ -59,17 +67,26 @@ typedef enum
     TRUTHS = 4096,
     VERBS = 8192,
     UK_PLACE = 16384,
-    UK_COUNTY = 32768
+    UK_COUNTY = 32768,
+    LEARNT_WORDS = 65536
 } WORD_TYPE;
 
+struct link;
 typedef struct entity
 {
 	int flag;
     char *name;
 	WORD_TYPE type;
     int num_links;              //Number of links to Sub Entities for this Entity
-    struct entity **links;      //A dymanic array of long pointers to other Root Entities
+    struct link *links;      //A dymanic array of long pointers to other Root Entities
 } entity;
+
+struct link
+{
+    struct entity *entity;      // A pointer to the word we are related to
+	RELATION_TYPE relation;    // The type of relation
+	int weight;                // The weight of that relationship;
+};
 
 typedef struct book
 {
@@ -82,6 +99,8 @@ typedef struct book
 const char *word_type_str(WORD_TYPE);
 WORDS_STAT initialise (WORDS * words);
 WORDS_STAT load (WORDS words, const char *filename, const WORD_TYPE type);
+WORDS_STAT learn_word_root (WORDS words, char *root, const WORD_TYPE type);
+WORDS_STAT learn_word_sub (WORDS words, char *word, const WORD_TYPE type, char *root);
 WORDS_STAT save (const WORDS words, char *filename);
 WORDS_STAT search (const WORDS words, char *word);
 entity    *find_word (const WORDS words, char *word);

@@ -22,6 +22,7 @@ const BOOK books[] = {
         {"verbs.txt", "verbs", VERBS},
         {"uk_places", "verbs", UK_PLACE},
         {"uk_county", "verbs", UK_COUNTY},
+        {"learnt_words", "learnt_words", LEARNT_WORDS},
     };
 
 const char *
@@ -87,6 +88,9 @@ word_type_str (WORD_TYPE type)
             break;
         case UK_COUNTY:
             strcat(result, "uk_county ");
+            break;
+        case LEARNT_WORDS:
+            strcat(result, "learnt_words ");
             break;
         default:
             strcat(result, "unspecified ");

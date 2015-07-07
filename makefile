@@ -37,6 +37,11 @@ libxhash3.so: OBJECTS=x_hash3.o words.o
 libxhash3.so : x_hash3.o words.o
 	    $(CC) $(CFLAGS) $(OBJECTS) -o $@ $(LDFLAGS) 
 
+size_of.o:size_of.c
+
+pad.h: size_of
+	size_of > $@
+
 TEST_FILE=test_in.txt
 test: all 
 	LD_LIBRARY_PATH=.  ./find_connection test_data/truths.txt google sky 
@@ -66,6 +71,9 @@ confidence: all
 	@echo ====================================
 	@echo
 	LD_LIBRARY_PATH=. time ./x_hash3 -t doc_file
+	@echo ====================================
+	@echo
+	LD_LIBRARY_PATH=. ./x_hash3  -t wiki-extractor/output
 	@echo ====================================
 	@echo
 
