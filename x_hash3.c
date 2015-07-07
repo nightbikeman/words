@@ -119,8 +119,11 @@ add_ent (char *name, hash_table_t * table)
     return e;
 }
 
+
+#define add_link(a,b) add_relation_link(a,b,128,RELATION_UNKNOWN)
+
 static void
-add_link (struct entity *e, entity * focal_root)
+add_relation_link (struct entity *e, entity * focal_root, int weight, RELATION_TYPE relation)
 {
     void *temp = 0;
     e->num_links++;
@@ -131,7 +134,9 @@ add_link (struct entity *e, entity * focal_root)
         exit (1);
     }
     e->links = temp;
-    e->links[e->num_links] = focal_root;
+    e->links[e->num_links].entity = focal_root;
+    e->links[e->num_links].weight = weight;
+    e->links[e->num_links].relation = relation;
 }
 
 static entity *
@@ -286,6 +291,71 @@ load (WORDS w, const char *file, const WORD_TYPE type)
 }
 
 WORDS_STAT
+learn_word_root (WORDS w, char *root, const WORD_TYPE type)
+{
+// It is assumed that the root word doesn't exist at this point
+//
+    WORDS_IMPL *words;
+    // make the pointer non-opaque
+    words = (WORDS_IMPL *) w;
+
+    entity *focal_root_entity = NULL;       //Used when the Root Entity already exists
+
+// Initialise this Root Entity:
+    focal_root_entity = add_ent (root, words->table);
+    focal_root_entity->type=type;
+    words->total_num_root_entities++;
+
+    return WORDS_SUCCESS;
+}
+
+WORDS_STAT
+learn_word_sub (WORDS w, char *word, const WORD_TYPE type, char *root)
+{
+// It is assumed that the root word doesn't exist at this point
+//
+    WORDS_IMPL *words;
+// make the pointer non-opaque
+    words = (WORDS_IMPL *) w;
+
+// First check whether the entry already exists:
+    entity *i = NULL;
+    entity *focal_root_entity = NULL;       //Used when the Root Entity already exists
+
+    i = find_entity (root, words->table);
+
+    if (i == NULL)
+    {   printf("This root entry doesn't exist ! \n");
+	exit(1);
+    }
+
+    focal_root_entity = i;
+    focal_root_entity->type|=type;
+
+    entity *sub_entity;
+
+    words->num_entities++;
+
+//First check whether the entity already exists :
+    sub_entity = find_entity (word, words->table);
+    if (sub_entity == NULL)
+    {
+
+//Initialise this Sub Entity:
+	sub_entity = add_ent (word, words->table);
+	words->total_num_sub_entities++;
+    }
+
+// Now link the Sub Entity to the focal_root_entity using the index of the entity arrays :
+    add_link (focal_root_entity, sub_entity);
+    add_link (sub_entity, focal_root_entity);
+
+    sub_entity->type=LEARNT_WORDS;
+
+    return WORDS_SUCCESS;
+}
+
+WORDS_STAT
 dump_json (const WORDS w)
 {
     FILE *out;
@@ -314,7 +384,7 @@ dump_json (const WORDS w)
                     fprintf (out, ",");
                 fprintf (out,
                          "{\n   \"source\" : \"%s\",\n   \"target\" : \"%s\",\n   \"type\" : \"suit\"\n}\n",
-                         data->name, data->links[j]->name);
+                         data->name, data->links[j].entity->name);
                 i = 1;
             }
         }
@@ -355,7 +425,7 @@ dump_formatted (const WORDS w)
                      data->name, data->num_links);
 
             for (j = 0; j <= data->num_links; j++)
-                fprintf (out, "Sub Entity is '%s'\n", data->links[j]->name);
+                fprintf (out, "Sub Entity is '%s'\n", data->links[j].entity->name);
         }
     }
     free (iter);
@@ -396,7 +466,7 @@ dump_txt (const WORDS w)
             fprintf (out, "%s %d", data->name, data->num_links);
 
             for (j = 0; j <= data->num_links; j++)
-                fprintf (out, ",%s", data->links[j]->name);
+                fprintf (out, ",%s", data->links[j].entity->name);
 
             fprintf (out, "\n");
         }
@@ -427,9 +497,9 @@ traverse_tree(entity *seed,entity *target,int depth,int mark)
 
 	for(i=0; (i< seed->num_links) && ( found == WORDS_FAIL ) ; i ++)
 	{
-		if ( seed->links[i]->flag != mark )
+		if ( seed->links[i].entity->flag != mark )
 		{
-			found = traverse_tree(seed->links[i],target,depth--,mark);
+			found = traverse_tree(seed->links[i].entity,target,depth--,mark);
 		}
 	}
 
@@ -512,12 +582,12 @@ word_search (const WORDS w, long nth_order, long quick, char *entity1, char *ent
                     {
                         //                      printf("%d %s %s \n",j,found_entity1->links[j]->name, found_entity2->name);
                         if (strcmp
-                            (found_entity1->links[j]->name,
+                            (found_entity1->links[j].entity->name,
                              found_entity2->name) == 0)
                         {
                             printf
                                 ("#1# Thread id(%ld) %s was found in => %s \n",
-                                 tid, found_entity1->links[j]->name,
+                                 tid, found_entity1->links[j].entity->name,
                                  found_entity1->name);
                             found++;
                             if (quick)
@@ -529,12 +599,12 @@ word_search (const WORDS w, long nth_order, long quick, char *entity1, char *ent
                     {
                         //                      printf("%d %s %s \n",j,found_entity2->links[j]->name, found_entity1->name);
                         if (strcmp
-                            (found_entity2->links[j]->name,
+                            (found_entity2->links[j].entity->name,
                              found_entity1->name) == 0)
                         {
                             printf
                                 ("#1# Thread id(%ld) %s was found in => %s \n",
-                                 tid, found_entity2->links[j]->name,
+                                 tid, found_entity2->links[j].entity->name,
                                  found_entity2->name);
                             found++;
                             if (quick)
@@ -595,11 +665,11 @@ word_search (const WORDS w, long nth_order, long quick, char *entity1, char *ent
                     {
                         //                      printf("%d,%d %s %s \n",j,k,found_entity1->links[j]->name, found_entity2->name);
                         if (strcmp
-                            (found_entity1->links[j]->name,
+                            (found_entity1->links[j].entity->name,
                              found_entity2->name) == 0)
                         {
                             printf ("*2* %s was found in => %s \n",
-                                    found_entity1->links[j]->name,
+                                    found_entity1->links[j].entity->name,
                                     found_entity1->name);
                             found++;
                             if (quick)
@@ -610,12 +680,12 @@ word_search (const WORDS w, long nth_order, long quick, char *entity1, char *ent
                         {
                             //                              printf("%d,%d %s %s \n",j,k,found_entity1->links[j]->name, found_entity2->links[k]->name);
                             if (strcmp
-                                (found_entity1->links[j]->name,
-                                 found_entity2->links[k]->name) == 0)
+                                (found_entity1->links[j].entity->name,
+                                 found_entity2->links[k].entity->name) == 0)
                             {
                                 printf
                                     ("*2* Thread id(%ld) %s was found common to Entities %s and %s\n",
-                                     tid, found_entity2->links[k]->name,
+                                     tid, found_entity2->links[k].entity->name,
                                      found_entity1->name,
                                      found_entity2->name);
                                 found++;
@@ -631,10 +701,10 @@ word_search (const WORDS w, long nth_order, long quick, char *entity1, char *ent
                         //                      printf("%d,%d %s %s \n",j,k,found_entity1->name, found_entity2->links[k]->name);
                         if (strcmp
                             (found_entity1->name,
-                             found_entity2->links[k]->name) == 0)
+                             found_entity2->links[k].entity->name) == 0)
                         {
                             printf ("*2* Thread id(%ld) %s was found in %s\n",
-                                    tid, found_entity2->links[k]->name,
+                                    tid, found_entity2->links[k].entity->name,
                                     found_entity2->name);
                             found++;
                             if (quick)
