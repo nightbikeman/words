@@ -124,7 +124,7 @@ read_in_file (char *file)
 }
 
 int
-scan_file(const WORDS wds, char *file)
+scan_file(const WORDS wds, char *file, int create)
 {
 
     int is_lower;
@@ -185,22 +185,34 @@ scan_file(const WORDS wds, char *file)
 			if (found_word == 0) {
 				if(VERBOSE)printf ("*** Entity \"%s\" was NOT found\n", word_pntr);
 				not_found_count++;
-// Add a new root entry in
-            			ret = learn_word_root (wds, word_pntr, LEARNT_WORDS);
-            			if (ret == WORDS_SUCCESS) {
-                			if(VERBOSE) printf ("New word \"%s\"added into LEARNT_WORDS successfully \n", word_pntr);
-				}
-            			else
-                			printf ("Error adding new word \"%s\" \n", word_pntr);
 
+				if (create) {
+// Add a new root entry in
+            				ret = learn_word_root (wds, word_pntr, LEARNT_WORDS);
+            				if (ret == WORDS_SUCCESS) {
+                				if(VERBOSE) printf ("New word \"%s\"added into LEARNT_WORDS successfully \n", word_pntr);
+					}
+            				else {
+                				printf ("Error adding new word \"%s\" \n", word_pntr);
+						exit(1);
+					}
+				}
+
+				if (create) {
 // If also lower case add in a new sub entity
-				if (is_lower)
-            			ret = learn_word_sub (wds, word_in_lower, LEARNT_WORDS, word_pntr);
-            			if (ret == WORDS_SUCCESS) {
-                			if(VERBOSE) printf ("New word \"%s\"added into LEARNT_WORDS successfully \n", word_pntr);
+					if (is_lower) {
+            					ret = learn_word_sub (wds, word_in_lower, LEARNT_WORDS, word_pntr);
+            					if (ret == WORDS_SUCCESS) {
+                					if(VERBOSE) printf ("New word \"%s\"added into LEARNT_WORDS successfully \n", word_pntr);
+						}
+            					else {
+                					printf ("Error adding new word \"%s\" \n", word_pntr);
+							exit(1);
+						}
+					}
 				}
 			}
-                    }
+                   }
 // Next word
                     word_pntr = strtok_r (NULL, " ", &end_word);
                 }
@@ -210,7 +222,11 @@ scan_file(const WORDS wds, char *file)
 
     } else printf("%s An error occured from read_in_file() \n",file);
 
-    printf("The number of words found were %d and NOT found were %d\n",found_count,not_found_count);
+    if (create)
+    	printf("The number of words found were %d and NOT found (but added) were %d\n",found_count,not_found_count);
+    else
+        printf("The number of words found were %d and NOT found were %d\n",found_count,not_found_count);
+
     total_found_count=total_found_count+found_count;
     total_not_found_count=total_not_found_count+not_found_count;
 
@@ -228,6 +244,7 @@ WORDS words;
     int lines_allocated = 128;
     int max_line_len = 100;
     int tid, nthreads;
+    int create_word=0;
     long nth_order;
     long iterations;
     long cores;
@@ -265,7 +282,7 @@ WORDS words;
         }
     }
 
-    while ((c = getopt (argc, argv, "b:c:o:s:t:")) != -1)
+    while ((c = getopt (argc, argv, "b:c:o:s:t:u:")) != -1)
         switch (c)
         {
 
@@ -351,7 +368,6 @@ WORDS words;
             printf ("Reading input files ");
 			read_all_files(words);
 
-            iters = 0;
             int rand1, rand2;
 
 
@@ -386,6 +402,7 @@ WORDS words;
 #pragma omp barrier
 
 
+            	iters = 0;
                 while (iters++ < iterations)
                 {
                     rand1 = rand () % 354000;
@@ -516,11 +533,13 @@ WORDS words;
             break;
 
 
-        case 't':
+        case 't':  create_word=1;
+        case 'u':
 
             if (argc != 3)
             {
                 printf ("Usage -t input_file | input_directory\n");
+                printf ("Usage -u input_file | input_directory\n");
                 exit (1);
             }
 
@@ -569,17 +588,20 @@ WORDS words;
                                                 strcat(dir_path, dir->d_name);
 
       			              		printf("Scanning input file: %s\n", dir_path);
-			 	      		scan_file(words,dir_path);
+			 	      		scan_file(words,dir_path,create_word);
 					}
     		                }
 
     		                closedir(d);
                 		end = time (NULL);
   	                 }
-                	 printf ("Processing the input directory took %f seconds to complete.\n\n", difftime (end, begin));
+                	 printf ("\nProcessing the input directory took %f seconds to complete.\n\n", difftime (end, begin));
 
-    			 printf("\n The total number of words found were %ld \n",total_found_count);
-    			 printf("\n The total number of words NOT found were %ld \n",total_not_found_count);
+    			 printf("The total number of words found were %ld \n",total_found_count);
+			 if (create_word)
+    			 	printf("The total number of words NOT found (but added) were %ld \n",total_not_found_count);
+			 else
+    			 	printf("The total number of words NOT found were %ld \n",total_not_found_count);
 
                 	 begin = time (NULL);
 
@@ -597,10 +619,10 @@ WORDS words;
             		 read_all_files(words);
 
                          printf("An input file %s was detected; Scanning\n",optarg);
-			 scan_file(words,optarg);
+			 scan_file(words,optarg,create_word);
 
                  	 end = time (NULL);
-                	 printf ("Processing the input file took %f seconds to complete.\n\n", difftime (end, begin));
+                	 printf ("\nProcessing the input file took %f seconds to complete.\n\n", difftime (end, begin));
 
                          begin = time (NULL);
 
@@ -619,12 +641,14 @@ WORDS words;
             break;
 
         case '?':
+        case 'h':
             fprintf (stderr, "Read input file: Usage <filename>\n");
             fprintf (stderr, "Run Benchmark: Usage -b iters <threads>\n");
             fprintf (stderr, "Create input file: Usage -c inum_lines words_file\n");
             fprintf (stderr, "Output into format: Usage -o input_file\n");
             fprintf (stderr, "Search: Usage -s nth_order<1|2> entity1 entity2\n");
-            fprintf (stderr, "Ingest Test file: Usage -t input_file | input_directory\n");
+            fprintf (stderr, "Ingest Test file & create new words & dump to o/p files: Usage -t input_file | input_directory\n");
+            fprintf (stderr, "Ingest Test file & don't create new words: Usage -u input_file | input_directory\n");
             exit (1);
 
         default:
