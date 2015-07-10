@@ -99,6 +99,7 @@ add_ent (char *name, hash_table_t * table)
     e->type = UNKNOWN;
     e->num_links = -1;
     e->links = NULL;
+	e->flag=0;
 
     // Add a entry in the hash table for searching
     /* Enter a key named "My Data" and specify it's value as a pointer to my_data */

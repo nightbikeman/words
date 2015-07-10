@@ -38,7 +38,6 @@ char *mmap_null_terminated(int prot, int flags, int fd)
 }
 
 
-
 #define WORD_SIZE 1000
 // FIXME there is a better wat to do this.
 #define SWORD_SIZE "1000"
@@ -349,7 +348,6 @@ main (int argc, char **argv)
                 }
 
                 //  Load the truths words file and write out into 3 formats
-
                 begin = time (NULL);
 
                 printf ("Reading input file %s\n", optarg);
