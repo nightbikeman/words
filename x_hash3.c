@@ -288,7 +288,6 @@ load (WORDS w, const char *file, const WORD_TYPE type)
 		}
     }
     fclose (in);
-<<<<<<< HEAD
 
     return WORDS_SUCCESS;
 }
@@ -343,73 +342,6 @@ add_linked_word (WORDS w, char *word, const WORD_TYPE type, struct entity *root)
     // Now link the Sub Entity to the focal_root_entity using the index of the entity arrays :
     add_link (root, sub_entity);
     add_link (sub_entity, root);
-=======
-
-    return WORDS_SUCCESS;
-}
-
-WORDS_STAT
-learn_word_root (WORDS w, char *root, const WORD_TYPE type)
-{
-// It is assumed that the root word doesn't exist at this point
-//
-    WORDS_IMPL *words;
-    // make the pointer non-opaque
-    words = (WORDS_IMPL *) w;
-
-    entity *focal_root_entity = NULL;       //Used when the Root Entity already exists
-
-// Initialise this Root Entity:
-    focal_root_entity = add_ent (root, words->table);
-    focal_root_entity->type=type;
-    words->total_num_root_entities++;
-
-    return WORDS_SUCCESS;
-}
-
-WORDS_STAT
-learn_word_sub (WORDS w, char *word, const WORD_TYPE type, char *root)
-{
-// It is assumed that the root word doesn't exist at this point
-//
-    WORDS_IMPL *words;
-// make the pointer non-opaque
-    words = (WORDS_IMPL *) w;
-
-// First check whether the entry already exists:
-    entity *i = NULL;
-    entity *focal_root_entity = NULL;       //Used when the Root Entity already exists
-
-    i = find_entity (root, words->table);
-
-    if (i == NULL)
-    {   printf("This root entry doesn't exist ! \n");
-	exit(1);
-    }
-
-    focal_root_entity = i;
-    focal_root_entity->type|=type;
-
-    entity *sub_entity;
-
-    words->num_entities++;
-
-//First check whether the entity already exists :
-    sub_entity = find_entity (word, words->table);
-    if (sub_entity == NULL)
-    {
-
-//Initialise this Sub Entity:
-	sub_entity = add_ent (word, words->table);
-	words->total_num_sub_entities++;
-    }
-
-// Now link the Sub Entity to the focal_root_entity using the index of the entity arrays :
-    add_link (focal_root_entity, sub_entity);
-    add_link (sub_entity, focal_root_entity);
-
-    sub_entity->type=LEARNT_WORDS;
->>>>>>> adrian/master
 
     return WORDS_SUCCESS;
 }

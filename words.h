@@ -42,16 +42,6 @@ typedef WORDPTR *WORDS;
 #define learnt_words  16
 #define MAX_WORDS     17
 
-<<<<<<< HEAD
-=======
-typedef enum{
-	RELATION_UNKNOWN,
-	RELATION_IS_A,
-	RELATION_HAS,
-	RELATION_LIKES
-} RELATION_TYPE;
-
->>>>>>> adrian/master
 typedef enum
 { 
     UNKNOWN = 0,
