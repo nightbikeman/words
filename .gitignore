@@ -1,6 +1,8 @@
 *.o
 *.so
 data/entities.out
+data/entities.json
+data/entities.txt
 find_connection
 x_hash3
 
