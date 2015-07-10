@@ -77,4 +77,16 @@ confidence: all
 	LD_LIBRARY_PATH=. ./x_hash3  -t wiki-extractor/output
 	@echo ====================================
 	@echo
+<<<<<<< HEAD
 
+=======
+	LD_LIBRARY_PATH=. time ./x_hash3 -u doc_file
+	@echo ====================================
+	@echo
+	LD_LIBRARY_PATH=. ./x_hash3  -u wiki-extractor/output
+	@echo ====================================
+	@echo
+	LD_LIBRARY_PATH=. ./x_hash3  -h
+	@echo ====================================
+	@echo
+>>>>>>> adrian/master
