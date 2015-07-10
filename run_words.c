@@ -13,51 +13,6 @@
 
 #include "words.h"
 
-<<<<<<< HEAD
-=======
-int first = 0;
-long total_found_count=0;
-long total_not_found_count=0;
-char *sentence, *word_pntr;
-char buffer_string[BUFFER_LEN];
-
-char *mmap_null_terminated(int prot, int flags, int fd)
-{
-        off_t pos = lseek(fd, 0, SEEK_CUR);
-	off_t size = lseek(fd, 0, SEEK_END);
-        lseek(fd, pos, SEEK_SET);
- 
-	char *ptr;
-	int pagesize = getpagesize();
-	if (size % pagesize != 0) {
-		ptr = mmap(NULL, size + 1, prot, flags, fd, 0);
-	} else {
-		int fullsize = size + pagesize;
-		ptr = mmap(NULL, fullsize, PROT_NONE, MAP_PRIVATE | MAP_ANON, 0, 0);
-		ptr = mmap(ptr, fullsize, prot, flags | MAP_FIXED, fd, 0);
-	}
-	assert(ptr[size] == 0);
-	return ptr;
-}
-
-static char
-get_sentence ()
-{
-    const char s[6] = ".?!\"";
-
-    if (first == 0)
-    {
-        sentence = strtok (buffer_string, s);
-        first = 1;
-        return (1);
-    }
-    sentence = strtok (NULL, s);
-    if (sentence != NULL)
-        return (1);
-    else
-        return (0);
->>>>>>> adrian/master
-
 long total_found_count=0;
 long total_not_found_count=0;
 const char const* sentence_delimiter = ".?!\"";
@@ -170,10 +125,6 @@ main (int argc, char **argv)
     int lines_allocated = 128;
     int max_line_len = 100;
     int tid, nthreads;
-<<<<<<< HEAD
-=======
-    int create_word=0;
->>>>>>> adrian/master
     long nth_order;
     long iterations;
     long cores;
@@ -233,28 +184,12 @@ main (int argc, char **argv)
                     printf ("Run Benchmark: Usage -b iters <threads>");
                     exit (1);
                 }
-            }
-            else if (argc != 3)
-            {
-                printf ("Run Benchmark: Usage -b iters <threads>");
-                exit (1);
-            }
-
 
                 omp_set_dynamic (0);        // Explicitly disable dynamic teams
                 if (cores == 0)
                     omp_set_num_threads (CORES);    // Use CORE threads for all consecutive parallel regions
                 else
                     omp_set_num_threads (cores);    // Use core threads for all consecutive parallel regions
-
-<<<<<<< HEAD
-=======
-            if (sscanf (optarg, "%ld", &iterations) != 1)
-            {
-                printf ("Error %s is not an integer", optarg);
-                exit (1);
-            }
->>>>>>> adrian/master
 
                 if (sscanf (optarg, "%ld", &iterations) != 1)
                 {
@@ -400,13 +335,6 @@ main (int argc, char **argv)
                     printf ("The Entity generation took %f wall clock seconds to complete.\n\n", difftime (end, begin));
 
                 break;
-
-        case 'c':              // Create an o/p file
-            if (argc != 4)
-            {
-                printf ("Create input file: Usage -c inum_lines words_file\n");
-                exit (1);
-            }
 
             case 'o':
                 if (argc != 3)

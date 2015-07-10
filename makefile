@@ -4,7 +4,7 @@
 all: x_hash3.o libxhash3.so x_hash3 find_connection find_word classify_word
 
 clean:
-	rm -f *.so *.o x_hash2 x_hash3 out.txt find_word find_connection 
+	rm -f *.so *.o x_hash2 x_hash3 out.txt find_word find_connection classify_word
 
 CPPFLAGS+=$(DEBUG) -Wall
 
@@ -77,9 +77,6 @@ confidence: all
 	LD_LIBRARY_PATH=. ./x_hash3  -t wiki-extractor/output
 	@echo ====================================
 	@echo
-<<<<<<< HEAD
-
-=======
 	LD_LIBRARY_PATH=. time ./x_hash3 -u doc_file
 	@echo ====================================
 	@echo
@@ -89,4 +86,3 @@ confidence: all
 	LD_LIBRARY_PATH=. ./x_hash3  -h
 	@echo ====================================
 	@echo
->>>>>>> adrian/master
