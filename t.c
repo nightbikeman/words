@@ -25,3 +25,4 @@ main (int argc, char *argv[])
     }                           /* All threads join master thread and disband */
 
 }
+/* vim: set ts=4 sw=4 tw=0 et : */

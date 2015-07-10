@@ -42,13 +42,6 @@ typedef WORDPTR *WORDS;
 #define learnt_words  16
 #define MAX_WORDS     17
 
-typedef enum{
-	RELATION_UNKNOWN,
-	RELATION_IS_A,
-	RELATION_HAS,
-	RELATION_LIKES
-} RELATION_TYPE;
-
 typedef enum
 { 
     UNKNOWN = 0,
@@ -84,7 +77,7 @@ typedef struct entity
 struct link
 {
     struct entity *entity;      // A pointer to the word we are related to
-	RELATION_TYPE relation;    // The type of relation
+	struct entity *relation;    // The type of relation
 	int weight;                // The weight of that relationship;
 };
 
@@ -99,8 +92,9 @@ typedef struct book
 const char *word_type_str(WORD_TYPE);
 WORDS_STAT initialise (WORDS * words);
 WORDS_STAT load (WORDS words, const char *filename, const WORD_TYPE type);
-WORDS_STAT learn_word_root (WORDS words, char *root, const WORD_TYPE type);
-WORDS_STAT learn_word_sub (WORDS words, char *word, const WORD_TYPE type, char *root);
+#define add_word(a,b,c) ((e_add_word(a,b,c) == NULL ) ? WORDS_FAIL : WORDS_SUCCESS)
+struct entity* e_add_word (WORDS w, char *word, const WORD_TYPE type);
+WORDS_STAT add_linked_word (WORDS words, char *word, const WORD_TYPE type, struct entity *root);
 WORDS_STAT save (const WORDS words, char *filename);
 WORDS_STAT search (const WORDS words, char *word);
 entity    *find_word (const WORDS words, char *word);
@@ -116,3 +110,4 @@ WORDS_STAT read_files (WORDS w, int start, int number);
 #define read_file(a,b) read_files(a,b,b)
 #define read_all_files(a) read_files(a,0,MAX_WORDS)
 #endif
+/* vim: set ts=4 sw=4 tw=0 et : */

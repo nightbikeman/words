@@ -52,6 +52,7 @@ test: all
 	if LD_LIBRARY_PATH=. ./find_word  ; then  false ; fi
 	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y  ./classify_word google 2> /dev/null | fgrep "google noun truth"
 	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y  ./classify_word hippo 2> /dev/null | fgrep "hippo noun truth"
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./x_hash3 -t doc_file 
 	@echo PASS
 
 confidence: all 
