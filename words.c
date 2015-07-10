@@ -125,3 +125,4 @@ read_files (WORDS w, int start, int end)
     }
 	return WORDS_SUCCESS;
 }
+/* vim: set ts=4 sw=4 tw=0 et : */

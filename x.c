@@ -570,3 +570,4 @@ word_search (const WORDS w, long nth_order, long quick, char *entity1,
 
     return (found);
 }
+/* vim: set ts=4 sw=4 tw=0 et : */

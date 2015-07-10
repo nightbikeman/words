@@ -94,17 +94,19 @@ add_ent (char *name, hash_table_t * table)
         perror ("allocating entity");
         exit (1);
     }
+	e->flag=0;
     e->name = strdup (name);
+    e->type = UNKNOWN;
     e->num_links = -1;
     e->links = NULL;
-	e->flag=0;
 
     // Add a entry in the hash table for searching
     /* Enter a key named "My Data" and specify it's value as a pointer to my_data */
     hash_key_t key;
     hash_value_t value;
     key.type = HASH_KEY_STRING;
-    key.str = strdup (name);
+    key.str = name;
+
     value.type = HASH_VALUE_PTR;
     value.ptr = e;
 
@@ -115,15 +117,14 @@ add_ent (char *name, hash_table_t * table)
                  hash_error_string (error));
         exit (1);
     }
-    free (key.str);
     return e;
 }
 
 
-#define add_link(a,b) add_relation_link(a,b,128,RELATION_UNKNOWN)
+#define add_link(a,b) add_relation_link(a,b,128,NULL)
 
 static void
-add_relation_link (struct entity *e, entity * focal_root, int weight, RELATION_TYPE relation)
+add_relation_link (struct entity *e, entity * focal_root, int weight, struct entity *relation)
 {
     void *temp = 0;
     e->num_links++;
@@ -290,67 +291,56 @@ load (WORDS w, const char *file, const WORD_TYPE type)
     return WORDS_SUCCESS;
 }
 
-WORDS_STAT
-learn_word_root (WORDS w, char *root, const WORD_TYPE type)
+#define add_word(a,b,c) ((e_add_word(a,b,c) == NULL ) ? WORDS_FAIL : WORDS_SUCCESS)
+struct entity*
+e_add_word (WORDS w, char *word, const WORD_TYPE type)
 {
 // It is assumed that the root word doesn't exist at this point
 //
-    WORDS_IMPL *words;
+
+	assert(word != NULL);
+	assert(w != NULL);
     // make the pointer non-opaque
-    words = (WORDS_IMPL *) w;
+    WORDS_IMPL *words= (WORDS_IMPL *) w;
 
-    entity *focal_root_entity = NULL;       //Used when the Root Entity already exists
+    // make sure the word we are adding doesn't already exist
+	assert(find_entity(word,words->table) == NULL);
 
-// Initialise this Root Entity:
-    focal_root_entity = add_ent (root, words->table);
-    focal_root_entity->type=type;
+    entity *entity =  add_ent (word, words->table);
+	assert(entity != NULL);
+    entity->type=type;
     words->total_num_root_entities++;
 
-    return WORDS_SUCCESS;
+    return entity;
 }
 
 WORDS_STAT
-learn_word_sub (WORDS w, char *word, const WORD_TYPE type, char *root)
+add_linked_word (WORDS w, char *word, const WORD_TYPE type, struct entity *root)
 {
-// It is assumed that the root word doesn't exist at this point
-//
-    WORDS_IMPL *words;
-// make the pointer non-opaque
-    words = (WORDS_IMPL *) w;
-
-// First check whether the entry already exists:
-    entity *i = NULL;
-    entity *focal_root_entity = NULL;       //Used when the Root Entity already exists
-
-    i = find_entity (root, words->table);
-
-    if (i == NULL)
-    {   printf("This root entry doesn't exist ! \n");
-	exit(1);
-    }
-
-    focal_root_entity = i;
-    focal_root_entity->type|=type;
-
-    entity *sub_entity;
-
+	assert(root != NULL);
+	assert(word != NULL);
+	assert(w != NULL);
+    // make the pointer non-opaque
+    WORDS_IMPL *words= (WORDS_IMPL *) w;
+	
+    root->type|=type;
     words->num_entities++;
 
-//First check whether the entity already exists :
-    sub_entity = find_entity (word, words->table);
+	//First check root the entity already exists :
+    entity *sub_entity = find_entity (word, words->table);
     if (sub_entity == NULL)
     {
+		//Initialise this Sub Entity:
+		sub_entity = add_ent (word, words->table);
+		assert(sub_entity != NULL);
 
-//Initialise this Sub Entity:
-	sub_entity = add_ent (word, words->table);
-	words->total_num_sub_entities++;
+		sub_entity->type=LEARNT_WORDS;
+		words->total_num_sub_entities++;
     }
 
-// Now link the Sub Entity to the focal_root_entity using the index of the entity arrays :
-    add_link (focal_root_entity, sub_entity);
-    add_link (sub_entity, focal_root_entity);
-
-    sub_entity->type=LEARNT_WORDS;
+    // Now link the Sub Entity to the focal_root_entity using the index of the entity arrays :
+    add_link (root, sub_entity);
+    add_link (sub_entity, root);
 
     return WORDS_SUCCESS;
 }
@@ -757,3 +747,4 @@ find_word (const WORDS w, char *word)
 
     return e;
 }
+/* vim: set ts=4 sw=4 tw=0 et : */

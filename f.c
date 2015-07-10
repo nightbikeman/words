@@ -13,3 +13,4 @@ main ()
     printf ("y=%d\nlen=%d\nword=%s\n", y, len, word);
 
 }
+/* vim: set ts=4 sw=4 tw=0 et : */

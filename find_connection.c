@@ -27,3 +27,4 @@ int main(int argc, char *argv[])
 	}
 	exit(ret);
 }
+/* vim: set ts=4 sw=4 tw=0 et : */
