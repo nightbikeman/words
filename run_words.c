@@ -107,9 +107,11 @@ scan_file(const WORDS wds, const char *file)
     }
     else printf("%s An error occured from read_in_file() \n",file);
 
-    printf("The number of words found were %d and NOT found were %d\n",found_count,not_found_count);
+    printf("The number of words found were %d and NOT found (but added) were %d\n",found_count,not_found_count);
     total_found_count=total_found_count+found_count;
     total_not_found_count=total_not_found_count+not_found_count;
+
+    fclose(f);
 
     return(0);
 }
@@ -444,6 +446,7 @@ main (int argc, char **argv)
                             read_all_files(words);
 
                             // for each file in the directory...
+                            int num_file=0;
                             while ((dir = readdir(d)) != NULL)
                             {
                                 // Get rid of . and ..
@@ -462,7 +465,7 @@ main (int argc, char **argv)
                                     strcat(dir_path, "/");
                                     strcat(dir_path, dir->d_name);
 
-                                    printf("Scanning input file: %s\n", dir_path);
+                                    printf("Scanning input file %d: %s\n", ++num_file,dir_path);
                                     scan_file(words,dir_path);
                                 }
                             }
