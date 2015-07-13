@@ -2,3 +2,22 @@ This project is an experiment in fetching a retrieving words and associated word
 
 To compile and run
 make clean all test
+
+
+Goals
+1.  Dump out and restore all data structures; need to restart in an 'as was' state.
+2.  Create a link structure between entities.   Each link should have a structure associated with it defining such things as:
+             Nature of connection - i.e.  a link to a noun or verb for starters.
+             Strength of connection (frequency)
+             Connection pointers to the two connected entities (connected both ways).
+3.  Provide a new option to scan <file> and create new connections in support of 2, based on the -t option.
+4.  Provide a graphical view of a selected enity and display its links to entities to a selected depth.
+5.  Daemonise and allow requests aligned to the switches can be performanced.
+
+
+New Functions
+1. Is entity a connected(linked) to entity b via connection c ? - perhaps add link should check whether the link has already been made ?
+2. Is entity a linked to enity b via any connection ?
+3. Delete relationship link between a and b
+4. Print entity a and its first order connections.
+
