@@ -122,23 +122,22 @@ add_ent (char *name, hash_table_t * table)
 }
 
 
-#define add_link(a,b) add_relation_link(a,b,128,NULL)
-
-static void
-add_relation_link (struct entity *e, entity * focal_root, int weight, struct entity *relation)
+WORDS_STAT add_link(struct entity *e, entity * focal_root, int weight, struct entity *relation)
 {
     void *temp = 0;
     e->num_links++;
     temp = realloc (e->links, (e->num_links + 1) * sizeof ((e->links[0])));
     if (temp == 0)
     {
-        printf ("Unable to allocate memory \n");
-        exit (1);
+        perror ("add_link");
+        return WORDS_FAIL;
     }
     e->links = temp;
     e->links[e->num_links].entity = focal_root;
     e->links[e->num_links].weight = weight;
     e->links[e->num_links].relation = relation;
+
+    return WORDS_SUCCESS;
 }
 
 static entity *
@@ -274,8 +273,8 @@ load (WORDS w, const char *file, const WORD_TYPE type)
 				}
 
 				// Now link the Sub Entity to the focal_root_entity using the index of the entity arrays :
-				add_link (focal_root_entity, sub_entity);
-				add_link (sub_entity, focal_root_entity);
+				add_link (focal_root_entity, sub_entity,128,NULL);
+				add_link (sub_entity, focal_root_entity,128,NULL);
 				/* we don't know what type of word this is */
 				sub_entity->type=TRUTHS|NOUNS;
 
@@ -340,8 +339,8 @@ add_linked_word (WORDS w, char *word, const WORD_TYPE type, struct entity *root)
     }
 
     // Now link the Sub Entity to the focal_root_entity using the index of the entity arrays :
-    add_link (root, sub_entity);
-    add_link (sub_entity, root);
+    add_link (root, sub_entity,128,NULL);
+    add_link (sub_entity, root,128,NULL);
 
     return WORDS_SUCCESS;
 }
@@ -739,13 +738,57 @@ word_search (const WORDS w, long nth_order, long quick, char *entity1, char *ent
 entity *
 find_word (const WORDS w, char *word)
 {
-    WORDS_IMPL *words;
-    // make the pointer non-opaque
-    words = (WORDS_IMPL *) w;
+    WORDS_IMPL *words = (WORDS_IMPL *) w;
 
     /* Visit each entry using iterator object */
     entity *e = find_entity (word, words->table);
 
     return e;
 }
+static 
+void remove_link(struct entity *e,int link)
+{
+    assert(e);
+    assert( link < e->num_links);
+
+    int i;
+    // remove the link
+    for(i=link;i<=e->num_links;i++)
+    {
+       e->links[i]=e->links[i+1];
+    }
+    // realloc the space
+    e->num_links--;
+    void *temp = realloc (e->links, (e->num_links) * sizeof ((e->links[0])));
+    assert(temp);
+    e->links=temp;
+}
+WORDS_STAT delete_link(struct entity *e1,struct entity *e2)
+{
+    int i;
+    for(i=0;i<e1->num_links;i++)
+        if ( e1->links[i].entity == e2) remove_link(e1,i);
+
+    int j;
+    for(j=0;j<e1->num_links;j++)
+        if ( e1->links[i].entity == e2) remove_link(e2,j);
+
+    return WORDS_SUCCESS;
+}
+
+WORDS_STAT is_link(struct entity *e1,struct entity *e2)
+{
+    int i;
+    for(i=0;i<e1->num_links;i++)
+        if ( e1->links[i].entity == e2) return WORDS_SUCCESS;
+
+    int j;
+    for(j=0;j<e1->num_links;j++)
+        if ( e1->links[i].entity == e2) return WORDS_SUCCESS;
+
+    return WORDS_FAIL;
+}
+WORDS_STAT update_weight(struct entity *e1,int weight);
+WORDS_STAT stat_link(struct entity *e1,int depth);
+
 /* vim: set ts=4 sw=4 tw=0 et : */
