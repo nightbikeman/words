@@ -109,5 +109,15 @@ int create_in_txt (int num_lines, char *file);
 WORDS_STAT read_files (WORDS w, int start, int number);
 #define read_file(a,b) read_files(a,b,b)
 #define read_all_files(a) read_files(a,0,MAX_WORDS)
+WORDS_STAT add_link(struct entity *e, entity * focal_root, int weight, struct entity *relation);
+
+
+//TODO implement these
+WORDS_STAT delete_link(struct entity *e1,struct entity *e2);
+WORDS_STAT is_link(struct entity *e1,struct entity *e2);
+WORDS_STAT update_weight(struct entity *e1,int weight);
+WORDS_STAT stat_link(struct entity *e1,int depth);
+
+
 #endif
 /* vim: set ts=4 sw=4 tw=0 et : */
