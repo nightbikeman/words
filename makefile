@@ -1,19 +1,20 @@
 .PHONY: clean
 # This is a test
 
-all: x_hash3.o libxhash3.so x_hash3 find_connection find_word classify_word delete_link
+TARGETS= x_hash3.o libxhash3.so x_hash3 find_connection find_word classify_word delete_link test_link
+all: $(TARGETS)
 
 clean:
-	rm -f *.so *.o x_hash2 x_hash3 out.txt find_word find_connection classify_word
+	rm -f *.so *.o x_hash2 x_hash3 out.txt $(TARGETS)
 
-CPPFLAGS+=$(DEBUG) -Wall
+CPPFLAGS+=$(DEBUG) -Wall -g
 
 x_hash: x_hash.o
 
 x_hash2: LDFLAGS=-lhiredis
 x_hash2: x_hash2.o
 
-delete_link find_word find_connection x_hash3 classify_word : LDFLAGS=-L. -lxhash3  -ldhash -fopenmp 
+test_link delete_link find_word find_connection x_hash3 classify_word : LDFLAGS=-L. -lxhash3  -ldhash -fopenmp  -g
 x_hash3: run_words.o 
 
 words.o x_hash3.o:CPPFLAGS=-g -fPIC -fopenmp $(DEBUG) -Wall
@@ -54,7 +55,17 @@ test: all
 	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y  ./classify_word hippo 2> /dev/null | fgrep "hippo noun truth"
 	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./x_hash3 -t doc_file 
 	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./delete_link  picture camera
-	if LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./delete_link  picture camera1 ; then false ; fi
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./delete_link  picture1 camera ; [ $$? = 2 ]
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./delete_link  picture camera1 ; [ $$? = 3 ]
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./delete_link  ; [ $$? = 4 ]
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./delete_link  picture ; [ $$? = 4 ]
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./delete_link  picture camera picture ; [ $$? = 4 ]
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./delete_link  beer camera ; [ $$? = 1 ]
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./test_link picture camera
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./test_link beer camera; [ $$? = 1 ]
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./test_link picture1 camera; [ $$? = 2 ]
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./test_link camera picture1; [ $$? = 3 ]
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./test_link ; [ $$? = 4 ]
 	@echo PASS
 
 confidence: all 

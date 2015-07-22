@@ -112,10 +112,15 @@ WORDS_STAT read_files (WORDS w, int start, int number);
 WORDS_STAT add_link(struct entity *e, entity * focal_root, int weight, struct entity *relation);
 
 
-//TODO implement these
+/** Returns WORDS_SUCCESS if it can delete a link between the two words */
 WORDS_STAT delete_link(struct entity *e1,struct entity *e2);
+
+
+/** Returns WORDS_SUCCESS if there is a link between the two words */
 WORDS_STAT is_link(struct entity *e1,struct entity *e2);
-WORDS_STAT update_weight(struct entity *e1,int weight);
+
+/* updates the weight of an entity */
+WORDS_STAT update_weight(struct link *e1,int weight);
 WORDS_STAT stat_link(struct entity *e1,int depth);
 
 

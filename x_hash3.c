@@ -202,7 +202,8 @@ load (WORDS w, const char *file, const WORD_TYPE type)
     in = fopen (file, "r");
     if (in == NULL)
     {
-        fprintf(stderr,"Input file %s not found \n",file);
+        if ( VERBOSE )
+            fprintf(stderr,"Input file %s not found \n",file);
 		return WORDS_FAIL;
     }
 
@@ -763,32 +764,57 @@ void remove_link(struct entity *e,int link)
     assert(temp);
     e->links=temp;
 }
+static WORDS_STAT delete_link_one_way(struct entity *e1,struct entity *e2)
+{
+    assert(e1 != NULL );
+    assert(e2 != NULL );
+    int i;
+    int removed=0;
+    for(i=0;i<e1->num_links;i++)
+        if ( e1->links[i].entity == e2) 
+        {
+            removed++;
+            remove_link(e1,i);
+        }
+    return (removed==0)?WORDS_FAIL:WORDS_SUCCESS;
+}
 WORDS_STAT delete_link(struct entity *e1,struct entity *e2)
 {
-    int i;
-    for(i=0;i<e1->num_links;i++)
-        if ( e1->links[i].entity == e2) remove_link(e1,i);
+    assert(e1 != NULL );
+    assert(e2 != NULL );
+    int n=0;
+    if (delete_link_one_way(e1,e2) == WORDS_SUCCESS ) n++;
+    if (delete_link_one_way(e2,e1) == WORDS_SUCCESS ) n++;
 
-    int j;
-    for(j=0;j<e1->num_links;j++)
-        if ( e1->links[i].entity == e2) remove_link(e2,j);
-
-    return WORDS_SUCCESS;
+    return (n==0)?WORDS_FAIL:WORDS_SUCCESS;
 }
 
-WORDS_STAT is_link(struct entity *e1,struct entity *e2)
+static WORDS_STAT is_link_one_way(struct entity *e1,struct entity *e2)
 {
+    assert(e1 != NULL );
+    assert(e2 != NULL );
     int i;
     for(i=0;i<e1->num_links;i++)
-        if ( e1->links[i].entity == e2) return WORDS_SUCCESS;
-
-    int j;
-    for(j=0;j<e1->num_links;j++)
         if ( e1->links[i].entity == e2) return WORDS_SUCCESS;
 
     return WORDS_FAIL;
 }
-WORDS_STAT update_weight(struct entity *e1,int weight);
+WORDS_STAT is_link(struct entity *e1,struct entity *e2)
+{
+    assert(e1 != NULL );
+    assert(e2 != NULL );
+    if (is_link_one_way(e1,e2) == WORDS_SUCCESS) return WORDS_SUCCESS;
+    if (is_link_one_way(e2,e1) == WORDS_SUCCESS) return WORDS_SUCCESS;
+    return WORDS_FAIL;
+}
+WORDS_STAT update_weight(struct link *l,int weight)
+{
+    assert(l != NULL );
+   
+    l->weight=weight; 
+   
+    return WORDS_SUCCESS; 
+}
 WORDS_STAT stat_link(struct entity *e1,int depth);
 
 /* vim: set ts=4 sw=4 tw=0 et : */
