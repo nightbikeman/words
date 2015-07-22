@@ -10,4 +10,5 @@ camera,picture,image,jpeg,gif,google
 google,web,advertising,email
 advertising,itv,sky,telly
 search engines,yahoo,bing,google,alta vista,duck duck go
-
+beer,drink,refreshment
+drink,glass
