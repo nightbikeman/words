@@ -1,7 +1,7 @@
 .PHONY: clean
 # This is a test
 
-all: x_hash3.o libxhash3.so x_hash3 find_connection find_word classify_word
+all: x_hash3.o libxhash3.so x_hash3 find_connection find_word classify_word delete_link
 
 clean:
 	rm -f *.so *.o x_hash2 x_hash3 out.txt find_word find_connection classify_word
@@ -13,7 +13,7 @@ x_hash: x_hash.o
 x_hash2: LDFLAGS=-lhiredis
 x_hash2: x_hash2.o
 
-find_word find_connection x_hash3 classify_word : LDFLAGS=-L. -lxhash3  -ldhash -fopenmp 
+delete_link find_word find_connection x_hash3 classify_word : LDFLAGS=-L. -lxhash3  -ldhash -fopenmp 
 x_hash3: run_words.o 
 
 words.o x_hash3.o:CPPFLAGS=-g -fPIC -fopenmp $(DEBUG) -Wall
@@ -53,6 +53,8 @@ test: all
 	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y  ./classify_word google 2> /dev/null | fgrep "google noun truth"
 	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y  ./classify_word hippo 2> /dev/null | fgrep "hippo noun truth"
 	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./x_hash3 -t doc_file 
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./delete_link  picture camera
+	if LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./delete_link  picture camera1 ; then false ; fi
 	@echo PASS
 
 confidence: all 
