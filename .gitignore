@@ -1,10 +1,10 @@
 *.o
 *.so
 
-**/entities.json
-**/entities.txt
+*/entities.json
+*/entities.txt
 find_connection
 x_hash3
-data/entities.out
+entities.out
 
 
