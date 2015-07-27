@@ -97,7 +97,7 @@ add_ent (char *name, hash_table_t * table)
 	e->flag=0;
     e->name = strdup (name);
     e->type = UNKNOWN;
-    e->num_links = -1;
+    e->num_links = 0;
     e->links = NULL;
 	e->flag=0;
 
@@ -124,18 +124,20 @@ add_ent (char *name, hash_table_t * table)
 
 WORDS_STAT add_link(struct entity *e, entity * focal_root, int weight, struct entity *relation)
 {
+    assert(e);
+    assert(focal_root);
     void *temp = 0;
     e->num_links++;
-    temp = realloc (e->links, (e->num_links + 1) * sizeof ((e->links[0])));
+    temp = realloc (e->links, e->num_links  * sizeof ((e->links[0])));
     if (temp == 0)
     {
         perror ("add_link");
         return WORDS_FAIL;
     }
     e->links = temp;
-    e->links[e->num_links].entity = focal_root;
-    e->links[e->num_links].weight = weight;
-    e->links[e->num_links].relation = relation;
+    e->links[e->num_links-1].entity = focal_root;
+    e->links[e->num_links-1].weight = weight;
+    e->links[e->num_links-1].relation = relation;
 
     return WORDS_SUCCESS;
 }
@@ -385,7 +387,7 @@ fdump_json (const WORDS w, FILE *out)
 
         if ( data->num_links > 0)
         {
-            for (j = 0; j <= data->num_links; j++)
+            for (j = 0; j < data->num_links; j++)
             {
                 if (i > 0)
                     fprintf (out, ",");
@@ -442,11 +444,9 @@ dump_formatted (const WORDS w)
 
         if (data->num_links > 0)
         {
-            fprintf (out,
-                     "\nRoot Entity is '%s' and the number of links are %d\n",
-                     data->name, data->num_links);
+            fprintf (out, "\nRoot Entity is '%s' and the number of links are %d\n", data->name, data->num_links);
 
-            for (j = 0; j <= data->num_links; j++)
+            for (j = 0; j < data->num_links; j++)
                 fprintf (out, "Sub Entity is '%s'\n", data->links[j].entity->name);
         }
     }
@@ -487,7 +487,7 @@ dump_txt (const WORDS w)
         {
             fprintf (out, "%s %d", data->name, data->num_links);
 
-            for (j = 0; j <= data->num_links; j++)
+            for (j = 0; j < data->num_links; j++)
                 fprintf (out, ",%s", data->links[j].entity->name);
 
             fprintf (out, "\n");
@@ -798,14 +798,14 @@ void remove_link(struct entity *e,int link)
 
     int i;
     // remove the link
-    for(i=link;i<=e->num_links;i++)
+    for(i=link;i<e->num_links;i++)
     {
        e->links[i]=e->links[i+1];
     }
     // realloc the space
     e->num_links--;
     void *temp = realloc (e->links, (e->num_links) * sizeof ((e->links[0])));
-    assert(temp);
+    assert(temp || (e->num_links == 0));
     e->links=temp;
 }
 static WORDS_STAT delete_link_one_way(struct entity *e1,struct entity *e2)
