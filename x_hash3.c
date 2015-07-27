@@ -352,7 +352,7 @@ WORDS_STAT
 fdump_chain_json (struct chain *chain, FILE *out)
 {
     assert(chain);
-    assert(chain->length>1);
+    assert(chain->length>0);
     int i;
     fprintf (out, "[\n");
     for(i=0;i<chain->length;i++ )
@@ -506,7 +506,6 @@ int
 traverse_tree(entity *seed,entity *target,int depth,const int max_depth,const int mark, struct chain *chain)
 {
 
-    printf("%s\n",seed->name);
 	if ((void*)seed == (void*)target)
     {
         chain->entity = malloc(sizeof(chain->entity)*(depth+1));

@@ -74,6 +74,9 @@ test: all
 	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./test_direct_link camera picture1; [ $$? = 3 ]
 	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./test_direct_link ; [ $$? = 4 ]
 	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./dump_json ; [ $$? = 0 ]
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./find_connection test_data/truths.txt drink glass 
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./find_connection test_data/truths.txt glass drink
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./find_connection test_data/truths.txt picture rhino
 	@echo PASS
 
 confidence: all 
