@@ -347,9 +347,26 @@ add_linked_word (WORDS w, char *word, const WORD_TYPE type, struct entity *root)
 }
 
 WORDS_STAT
-dump_json (const WORDS w)
+fdump_chain_json (struct chain *chain, FILE *out)
 {
-    FILE *out;
+    assert(chain);
+    assert(chain->length>1);
+    int i;
+    fprintf (out, "[\n");
+    for(i=0;i<chain->length;i++ )
+    {
+        fprintf (out,
+                 "{\n   \"source\" : \"%s\",\n   \"target\" : \"%s\",\n   \"type\" : \"suit\"\n}\n",
+                 chain->entity[i]->name, chain->entity[i+1]->name
+                );
+    }
+    fprintf (out, "]\n");
+
+    return WORDS_SUCCESS;
+}
+WORDS_STAT
+fdump_json (const WORDS w, FILE *out)
+{
     WORDS_IMPL *words;
     // make the pointer non-opaque
     words = (WORDS_IMPL *) w;
@@ -360,8 +377,7 @@ dump_json (const WORDS w)
     hash_entry_t *entry;
     int i = 0;
 
-    out = fopen ("data/entities.json", "wb");
-
+    fprintf (out, "[\n");
     while ((entry = iter->next (iter)) != NULL)
     {
         struct entity *data = (struct entity *) entry->value.ptr;
@@ -383,9 +399,24 @@ dump_json (const WORDS w)
     free (iter);
     fprintf (out, "]\n");
 
-    fclose (out);
-
     return (WORDS_SUCCESS);
+}
+
+WORDS_STAT 
+dump_json (const WORDS w, char *filename)
+{
+    assert(w);
+    assert(filename);
+    FILE *out;
+
+    out = fopen (filename, "wb");
+    if ( out != NULL )
+    {
+        fdump_json(w,out);
+        fclose (out);
+        return (WORDS_SUCCESS);
+    }
+    return (WORDS_FAIL);
 }
 
 WORDS_STAT
@@ -472,32 +503,45 @@ dump_txt (const WORDS w)
 // traverse the tree from a seed point looking for another entity
 // marking ones as searched as we go
 int 
-traverse_tree(entity *seed,entity *target,int depth,int mark)
+traverse_tree(entity *seed,entity *target,int depth,const int max_depth,const int mark, struct chain *chain)
 {
-	int i;
-	int found=WORDS_FAIL;
 
+    printf("%s\n",seed->name);
 	if ((void*)seed == (void*)target)
-		return WORDS_SUCCESS;
+    {
+        chain->entity = malloc(sizeof(chain->entity)*(depth+1));
+        chain->length=depth;
+        chain->entity[depth]=seed;
+        return WORDS_SUCCESS;
+    }
 
-	if ( depth == 0 )
+	if ( depth == max_depth )
 		return WORDS_FAIL;
 
 	// mark this one as visited
 	seed->flag=mark;
 
-	for(i=0; (i< seed->num_links) && ( found == WORDS_FAIL ) ; i ++)
-	{
-		if ( seed->links[i].entity->flag != mark )
-		{
-			found = traverse_tree(seed->links[i].entity,target,depth--,mark);
-		}
-	}
+    {
+        int i;
+        int found=WORDS_FAIL;
+        for(i=0; (i< seed->num_links) ; i ++)
+        {
+            if ( seed->links[i].entity->flag != mark )
+            {
+                found = traverse_tree(seed->links[i].entity,target,(depth+1),max_depth,mark,chain);
+                if (found == WORDS_SUCCESS )
+                {
+                    chain->entity[depth]=seed;
+                    break;
+                }
+            }
+        }
 
-	return found;
+        return found;
+    }
 }
 WORDS_STAT
-word_search_r (const WORDS w, long nth_order, long quick, char *entity1, char *entity2)
+word_search_r (const WORDS w, long nth_order, char *entity1, char *entity2, struct chain *chain)
 {
 	WORDS_STAT ret = WORDS_FAIL;
     WORDS_IMPL *words;
@@ -512,7 +556,7 @@ word_search_r (const WORDS w, long nth_order, long quick, char *entity1, char *e
 		entity *found_entity2 = find_entity (entity2, words->table);
 		if ( found_entity2 != NULL )
 		{
-			ret = traverse_tree(found_entity1,found_entity2,nth_order,mark);
+			ret = traverse_tree(found_entity1,found_entity2,0,nth_order,mark,chain);
 		}
 	}
 	return ret;

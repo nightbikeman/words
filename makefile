@@ -62,10 +62,12 @@ test: all
 	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./delete_link  picture camera picture ; [ $$? = 4 ]
 	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./delete_link  beer camera ; [ $$? = 1 ]
 	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./test_link picture camera
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./test_link bing fox
 	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./test_link beer camera; [ $$? = 1 ]
 	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./test_link picture1 camera; [ $$? = 2 ]
 	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./test_link camera picture1; [ $$? = 3 ]
 	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./test_link ; [ $$? = 4 ]
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./dump_json ; [ $$? = 0 ]
 	@echo PASS
 
 confidence: all 
