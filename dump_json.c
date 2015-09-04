@@ -16,7 +16,7 @@ main (int argc, char *argv[])
     initialise (&words);
     if (read_all_files(words) == WORDS_SUCCESS)
     {
-        dump_json(words);
+        dump_json(words,"test.json");
     }
     return 0;
 }

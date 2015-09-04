@@ -81,6 +81,11 @@ struct link
 	int weight;                // The weight of that relationship;
 };
 
+struct chain
+{
+    int length;
+    struct entity **entity;      // a list of the entities in the chain
+};
 typedef struct book
 {
     char *filename;
@@ -100,11 +105,11 @@ WORDS_STAT search (const WORDS words, char *word);
 entity    *find_word (const WORDS words, char *word);
 WORD_TYPE  cat_word (const WORDS words, char *word);
 WORDS_STAT dump (const WORDS words);
-WORDS_STAT dump_json (const WORDS words);
+WORDS_STAT dump_json (const WORDS words, char *filename);
 WORDS_STAT dump_formatted (const WORDS w);
 WORDS_STAT dump_txt (const WORDS w);
 WORDS_STAT word_search (const WORDS w, long nth_order, long quick, char *entity1, char *entity2);
-WORDS_STAT word_search_r (const WORDS w, long nth_order, long quick, char *entity1, char *entity2);
+WORDS_STAT word_search_r (const WORDS w, long nth_order, char *entity1, char *entity2, struct chain *chain);
 int create_in_txt (int num_lines, char *file);
 WORDS_STAT read_files (WORDS w, int start, int number);
 #define read_file(a,b) read_files(a,b,b)
@@ -112,6 +117,8 @@ WORDS_STAT read_files (WORDS w, int start, int number);
 WORDS_STAT add_link(struct entity *e, entity * focal_root, int weight, struct entity *relation);
 
 
+// dumps a json descibing the array of links pased to it to the file handle
+WORDS_STAT fdump_chain_json (struct chain *chain,FILE *out);
 /** Returns WORDS_SUCCESS if it can delete a link between the two words */
 WORDS_STAT delete_link(struct entity *e1,struct entity *e2);
 

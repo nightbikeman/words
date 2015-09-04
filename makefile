@@ -1,20 +1,24 @@
 .PHONY: clean
 # This is a test
 
-TARGETS= x_hash3.o libxhash3.so x_hash3 find_connection find_word classify_word delete_link test_link dump_json
+TARGETS= x_hash3.o libxhash3.so x_hash3 find_connection find_word classify_word delete_link test_direct_link dump_json  html/data.json
 all: $(TARGETS)
 
 clean:
-	rm -f *.so *.o x_hash2 x_hash3 out.txt $(TARGETS)
+	rm -f *.so *.o x_hash2 x_hash3 out.txt $(TARGETS) 
 
 CPPFLAGS+=$(DEBUG) -Wall -g
+
+html/data.json: dump_json
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./dump_json 
+	cp test.json html/data.json
 
 x_hash: x_hash.o
 
 x_hash2: LDFLAGS=-lhiredis
 x_hash2: x_hash2.o
 
-dump_json test_link delete_link find_word find_connection x_hash3 classify_word : LDFLAGS=-L. -lxhash3  -ldhash -fopenmp  -g
+dump_json test_direct_link delete_link find_word find_connection x_hash3 classify_word : LDFLAGS=-L. -lxhash3  -ldhash -fopenmp  -g
 x_hash3: run_words.o 
 
 words.o x_hash3.o:CPPFLAGS=-g -fPIC -fopenmp $(DEBUG) -Wall
@@ -61,11 +65,18 @@ test: all
 	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./delete_link  picture ; [ $$? = 4 ]
 	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./delete_link  picture camera picture ; [ $$? = 4 ]
 	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./delete_link  beer camera ; [ $$? = 1 ]
-	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./test_link picture camera
-	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./test_link beer camera; [ $$? = 1 ]
-	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./test_link picture1 camera; [ $$? = 2 ]
-	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./test_link camera picture1; [ $$? = 3 ]
-	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./test_link ; [ $$? = 4 ]
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./test_direct_link picture camera
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./test_direct_link drink glass
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./test_direct_link drink beer
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./test_direct_link glass beer ; [ $$? = 1 ]
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./test_direct_link beer camera; [ $$? = 1 ]
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./test_direct_link picture1 camera; [ $$? = 2 ]
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./test_direct_link camera picture1; [ $$? = 3 ]
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./test_direct_link ; [ $$? = 4 ]
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./dump_json ; [ $$? = 0 ]
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./find_connection test_data/truths.txt drink glass 
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./find_connection test_data/truths.txt glass drink
+	LD_LIBRARY_PATH=. DATA_DIR=test_data LOAD_FAIL_OK=Y ./find_connection test_data/truths.txt picture rhino
 	@echo PASS
 
 confidence: all 

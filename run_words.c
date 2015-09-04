@@ -359,7 +359,7 @@ main (int argc, char **argv)
                 {
                     begin = time (NULL);
 
-                    dump_json (words);
+                    dump_json (words,"data/entities.json");
                     dump_formatted (words);
                     dump_txt (words);
 
@@ -480,7 +480,7 @@ main (int argc, char **argv)
 
                         begin = time (NULL);
 
-                        dump_json (words);
+                        dump_json (words,"data/entities.json");
                         dump_formatted (words);
                         dump_txt (words);
 
@@ -501,7 +501,7 @@ main (int argc, char **argv)
 
                         begin = time (NULL);
 
-                        dump_json (words);
+                        dump_json (words,"data/entities.json");
                         dump_formatted (words);
                         dump_txt (words);
 
