@@ -475,8 +475,8 @@ main (int argc, char **argv)
                         }
                         printf ("Processing the input directory took %f seconds to complete.\n\n", difftime (end, begin));
 
-                        printf("\n The total number of words found were %ld \n",total_found_count);
-                        printf("\n The total number of words NOT found were %ld \n",total_not_found_count);
+                        printf("\nThe total number of words found were %ld \n",total_found_count);
+                        printf("The total number of words NOT found were %ld \n",total_not_found_count);
 
                         begin = time (NULL);
 
@@ -485,7 +485,7 @@ main (int argc, char **argv)
                         dump_txt (words);
 
                         end = time (NULL);
-                        printf ("Writing the data out took %f seconds to complete.\n\n", difftime (end, begin));
+                        printf ("\nWriting the data out took %f seconds to complete.\n\n", difftime (end, begin));
 
                     } else {
 
@@ -497,7 +497,7 @@ main (int argc, char **argv)
                         scan_file(words,optarg);
 
                         end = time (NULL);
-                        printf ("Processing the input file took %f seconds to complete.\n\n", difftime (end, begin));
+                        printf ("\nProcessing the input file took %f seconds to complete.\n\n", difftime (end, begin));
 
                         begin = time (NULL);
 
@@ -506,7 +506,7 @@ main (int argc, char **argv)
                         dump_txt (words);
 
                         end = time (NULL);
-                        printf ("Writing the data out took %f seconds to complete.\n\n", difftime (end, begin));
+                        printf ("\nWriting the data out took %f seconds to complete.\n\n", difftime (end, begin));
 
                     }
                 }
