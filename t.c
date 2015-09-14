@@ -1,28 +1,10 @@
-#include <omp.h>
 #include <stdio.h>
-#include <stdlib.h>
 
-int
-main (int argc, char *argv[])
-{
-    int nthreads, tid;
+char line[1024];  /* Generously large value for most situations */
 
-/* Fork a team of threads giving them their own copies of variables */
-#pragma omp parallel private(nthreads, tid)
-    {
+char *eof;
 
-        /* Obtain thread number */
-        tid = omp_get_thread_num ();
-        printf ("Hello World from thread = %d\n", tid);
+line[0] = '\0'; /* Ensure empty line if no input delivered */
+line[sizeof(line)-1] = ~'\0';  /* Ensure no false-null at end of buffer */
 
-        /* Only master thread does this */
-        if (tid == 0)
-        {
-            nthreads = omp_get_num_threads ();
-            printf ("Number of threads = %d\n", nthreads);
-        }
-
-    }                           /* All threads join master thread and disband */
-
-}
-/* vim: set ts=4 sw=4 tw=0 et : */
+eof = fgets(line, sizeof(line), stdin);

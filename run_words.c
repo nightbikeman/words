@@ -13,9 +13,12 @@
 
 #include "words.h"
 
+int lines_allocated = 128;
 long total_found_count=0;
 long total_not_found_count=0;
 const char const* sentence_delimiter = ".?!\"";
+char **test_words;
+WORDS words;
 
 char *mmap_null_terminated(int prot, int flags, int fd)
 {
@@ -40,13 +43,14 @@ char *mmap_null_terminated(int prot, int flags, int fd)
 #define WORD_SIZE 1000
 // FIXME there is a better wat to do this.
 #define SWORD_SIZE "1000"
-    int
-scan_file(const WORDS wds, const char *file)
+
+int scan_file(const WORDS wds, const char *file)
 {
     int found_count = 0;
     int not_found_count = 0;
     WORDS_STAT ret;
     char word[WORD_SIZE];
+
     FILE *f=fopen(file ,"r");
     if ( f != 0 )
     {
@@ -116,31 +120,329 @@ scan_file(const WORDS wds, const char *file)
     return(0);
 }
 
-    int
-main (int argc, char **argv)
+int run_benchmark(int iterations)
 {
 
-    WORDS words;
-    int ret;
-    int index;
-    int c;
-    int lines_allocated = 128;
+    int iters;
     int max_line_len = 100;
-    int tid, nthreads;
     long nth_order;
-    long iterations;
-    long cores;
-    long iters;
-    long intvar;
     time_t begin, end;
-    char *dir_path = NULL;
 
+    lines_allocated=128;
+
+            //  Benchmark a random search
+            //
+            //
+
+
+            FILE *fp = fopen ("data/benchmark_words.txt", "r");
+            if (fp == NULL)
+            {
+                fprintf (stderr, "Error opening file.\n");
+                exit (2);
+            }
+            int i;
+            for (i = 0; 1; i++)
+            {
+                int j;
+
+                // Have we gone over our line allocation? 
+                if (i >= lines_allocated)
+                {
+                    int new_size;
+
+                    new_size = lines_allocated * 2;
+                    test_words = (char **) realloc (test_words, sizeof (char *) * new_size);
+                    if (test_words == NULL)
+                    {
+                        fprintf (stderr, "Out of memory.\n");
+                        exit (3);
+                    }
+                    lines_allocated = new_size;
+                }
+                test_words[i] = malloc (max_line_len);
+                if (test_words[i] == NULL)
+                {
+                    fprintf (stderr, "Out of memory (3).\n");
+                    exit (4);
+                }
+                if (fgets (test_words[i], max_line_len - 1, fp) == NULL)
+                    break;
+
+                // Get rid of CR or LF at end of line 
+                for (j = strlen (test_words[i]) - 1; j >= 0 && (test_words[i][j] == '\n' || test_words[i][j] == '\r'); j--);
+                test_words[i][j + 1] = '\0';
+            }
+            fclose (fp);
+
+
+            // Load in words
+            //              WORDS truths;
+
+            printf ("Reading input files ");
+            read_all_files(words);
+
+            iters = 0;
+            int rand1, rand2;
+
+
+
+            printf ("Running %d iterations \n", iterations);
+
+            while (iters++ < iterations)
+            {
+                rand1 = rand () % 354000;
+                rand2 = rand () % 354000;
+
+                begin = time (NULL);
+
+
+                nth_order = 1;
+                word_search (words, nth_order, FULL, test_words[rand1], test_words[rand2]);
+
+                nth_order = 2;
+                word_search (words, nth_order, FULL, test_words[rand1], test_words[rand2]);
+
+            }
+
+            for (; i >= 0; i--)
+                free (test_words[i]);
+
+            free (test_words);
+
+            end = time (NULL);
+            printf ("The Benchmark took %f wall clock seconds to complete.\n\n", difftime (end, begin));
+
+      return(0);
+}
+
+
+int create_outut_file (int lines, char *file)
+{
+    int ret;
+    time_t begin, end;
+
+            // Create an o/p file
+            begin = time (NULL);
+
+            ret = create_in_txt (lines, file);
+
+            end = time (NULL);
+            if (ret != 0)
+                printf ("The Entity generation failed \n");
+            else
+                printf ("The Entity generation took %f wall clock seconds to complete.\n\n", difftime (end, begin));
+
+            return(0);
+}
+
+int load_truths_and_write (char *file)
+{
+    int ret;
+    time_t begin, end;
+
+            //  Load the truths words file and write out into 3 formats
+            begin = time (NULL);
+
+            printf ("Reading input file %s\n", file);
+            ret = load (words, file, TRUTHS);
+
+            end = time (NULL);
+            printf ("The Entity generation took %f seconds to complete.\n\n", difftime (end, begin));
+
+
+            if ((ret) == WORDS_SUCCESS)
+            {
+                begin = time (NULL);
+
+                dump_json (words,"data/entities.json");
+                dump_formatted (words);
+                dump_txt (words);
+
+                end = time (NULL);
+                printf ("Writing the data out took %f seconds to complete.\n\n", difftime (end, begin));
+
+            }
+            else
+            {
+                printf ("The entity generation failed. \n");
+                exit (1);
+            }
+
+    return(0);
+}
+
+int read_input_file (char *path)
+{
+    int ret;
+
+            printf ("Reading input file %s\n", path);
+            ret = load (words, path, TRUTHS);
+            if (ret == WORDS_SUCCESS)
+                printf ("%s read in successfully \n", path);
+            else
+                printf ("%s  - error on reading \n", path);
+
+    return(0);
+}
+
+int search_for_words (char *find_word_1, char *find_word_2, int order_val)
+{
+    int ret;
+    time_t begin, end;
+
+            // Search for words
+            begin = time (NULL);
+
+            printf ("Reading input file\n" );
+            ret = read_file(words,truths);
+            end = time (NULL);
+            printf ("The Entity generation took %f seconds to complete.\n\n", difftime (end, begin));
+
+            // Now search
+            begin = time (NULL);
+
+            // Choose QUICK or FULL scans
+            ret = word_search (words, order_val, FULL, find_word_1, find_word_2);
+
+            end = time (NULL);
+            printf ("Writing the data out took %f seconds to complete.\n\n", difftime (end, begin));
+
+            if (ret == 0)
+                printf ("The nth order search failed \n");
+            else
+                printf ("The nth order search took %f seconds to complete and found %d matches.\n\n", difftime (end, begin), ret);
+
+    return(0);
+}
+
+
+int ingest_files(char *path)
+{
+    int err;
+    char *dir_path = NULL;
     DIR           *d;
     struct dirent *dir;
+    struct stat s;
+    time_t begin, end;
+
+            // Ingest input files
+            // Check whether the specifier is a file or directory
+            err = stat(path, &s);
+
+            if(-1 == err) {
+                if(ENOENT == errno) {
+                    printf("%s file or directory does not exist\n",path);
+                    exit(1);
+                } else {
+                    perror("stat");
+                    exit(1);
+                }
+            } else {
+
+                // If we have a valid file or directory
+                total_found_count=0;
+                total_not_found_count=0;
+
+                if(S_ISDIR(s.st_mode)) {
+                    printf("An input directory was detected - scanning files: \n");
+                    d = opendir(path);
+
+                    // Now read in the input files from the input dir and process....
+                    if (d)
+                    {
+                        begin = time (NULL);
+                        read_all_files(words);
+
+                        // for each file in the directory...
+                        int num_file=0;
+                        while ((dir = readdir(d)) != NULL)
+                        {
+                            // Get rid of . and ..
+                            if ((strncmp(dir->d_name,".",1) != 0) && (strncmp(dir->d_name,"..",2) != 0))  {
+                                // Combine OPTARG and d_name as a PATH
+
+                                dir_path = realloc(dir_path, (strlen(path) + strlen("/") + strlen(dir->d_name) + 1) * sizeof(char));
+
+                                if (!dir_path) {
+                                    printf("Path allocation failed \n");
+                                    exit(1);
+                                }
+                                int size_path=sizeof(dir_path);
+                                memset (dir_path, '\0', size_path);
+                                strcat(dir_path, path);
+                                strcat(dir_path, "/");
+                                strcat(dir_path, dir->d_name);
+
+                                printf("Scanning input file %d: %s\n", ++num_file,dir_path);
+                                scan_file(words,dir_path);
+                            }
+                        }
+
+                        closedir(d);
+                        end = time (NULL);
+                    }
+                    printf ("Processing the input directory took %f seconds to complete.\n\n", difftime (end, begin));
+
+                    printf("\nThe total number of words found were %ld \n",total_found_count);
+                    printf("The total number of words NOT found were %ld \n",total_not_found_count);
+
+                    begin = time (NULL);
+
+                    dump_json (words,"data/entities.json");
+                    dump_formatted (words);
+                    dump_txt (words);
+
+                    end = time (NULL);
+                    printf ("\nWriting the data out took %f seconds to complete.\n\n", difftime (end, begin));
+
+                } else {
+
+                    // The input file exists so process....
+                    begin = time (NULL);
+                    read_all_files(words);
+
+                    printf("An input file %s was detected; Scanning\n",path);
+                    scan_file(words,path);
+
+                    end = time (NULL);
+                    printf ("\nProcessing the input file took %f seconds to complete.\n\n", difftime (end, begin));
+
+                    begin = time (NULL);
+
+                    dump_json (words,"data/entities.json");
+                    dump_formatted (words);
+                    dump_txt (words);
+
+                    end = time (NULL);
+                    printf ("\nWriting the data out took %f seconds to complete.\n\n", difftime (end, begin));
+
+                }
+        }
+
+    return(0);
+}
+
+
+
+
+int main (int argc, char **argv)
+{
+
+    int c;
+    int iters;
+    int order;
+    int daemon=0;
+    char input_buffer[256];
+    char *p2;
+    long intvar;
+    enum { kMaxArgs = 64 };
+    const char s[2] = " ";
+
 
     initialise(&words);
 
-    char **test_words = (char **) malloc (sizeof (char *) * lines_allocated);
+    test_words = (char **) malloc (sizeof (char *) * lines_allocated);
     if (test_words == NULL)
     {
         fprintf (stderr, "Out of memory (1).\n");
@@ -148,7 +450,6 @@ main (int argc, char **argv)
     }
 
     opterr = 0;
-    cores = 0;
 
     if (0 != access ("data/", F_OK))
     {
@@ -164,384 +465,211 @@ main (int argc, char **argv)
         }
     }
 
-    while ((c = getopt (argc, argv, "b:c:o:s:t:")) != -1)
-        switch (c)
-        {
+    while (1)
+    {
 
+    if (daemon==1)
+    {
+            system("clear");
+            fprintf (stderr, "'b iters' - Run Benchmark\n");
+            fprintf (stderr, "'c num_lines words_file' - Create input file\n");
+            fprintf (stderr, "'p' - Print Help\n");
+            fprintf (stderr, "'o file' - Output into format\n");
+            fprintf (stderr, "'r file' - Read in a file\n");
+            fprintf (stderr, "'s <1|2>' entity entity'  - Search for entity match\n");
+            fprintf (stderr, "'t <file | dir>' Ingest file\n");
+            fprintf (stderr, "'x Exit\n");
+            fprintf (stderr, "?\n");
 
-            case 'b':
-                //  Benchmark a random search
-                //
-                //
-                if (argc == 4)
+            fgets(input_buffer,256,stdin);
+
+            p2 = strtok(input_buffer, s);
+            argc=1;
+
+            while (p2 != NULL)
+            {
+                argv[argc++] = p2;
+                p2 = strtok(NULL, " ");
+            }
+            argv[argc] = 0;
+
+            if (strncmp(argv[1],"b",1) == 0) c='b'; else
+            if (strncmp(argv[1],"c",1) == 0) c='c'; else
+            if (strncmp(argv[1],"h",1) == 0) c='h'; else
+            if (strncmp(argv[1],"o",1) == 0) c='o'; else
+            if (strncmp(argv[1],"p",1) == 0) c='p'; else
+            if (strncmp(argv[1],"r",1) == 0) c='r'; else
+            if (strncmp(argv[1],"s",1) == 0) c='s'; else
+            if (strncmp(argv[1],"t",1) == 0) c='t'; else
+            if (strncmp(argv[1],"x",1) == 0) c='x'; else
+               printf("Invalid option \n");
+    }
+
+    if (daemon == 0) c = getopt (argc, argv, "bcdhorstx:");
+
+    switch (c)
+    {
+        case 'b':
+            //  Benchmark a random search
+            //  Run Benchmark: Usage -b iters
+            //
+            if (argc == 3)
+            {
+                if (sscanf (argv[2], "%d", &iters) != 1)
                 {
-                    if (sscanf (argv[3], "%ld", &cores) != 1)
-                    {
-                        printf ("Error %s is not an integer", argv[3]);
-                        exit (1);
-                    }
-                }
-                else if (argc != 3)
-                {
-                    printf ("Run Benchmark: Usage -b iters <threads>");
+                    printf ("Error %s is not an integer\n", argv[2]);
                     exit (1);
                 }
-
-                omp_set_dynamic (0);        // Explicitly disable dynamic teams
-                if (cores == 0)
-                    omp_set_num_threads (CORES);    // Use CORE threads for all consecutive parallel regions
-                else
-                    omp_set_num_threads (cores);    // Use core threads for all consecutive parallel regions
-
-                if (sscanf (optarg, "%ld", &iterations) != 1)
-                {
-                    printf ("Error %s is not an integer", optarg);
-                    exit (1);
-                }
-
-
-                FILE *fp = fopen ("data/benchmark_words.txt", "r");
-                if (fp == NULL)
-                {
-                    fprintf (stderr, "Error opening file.\n");
-                    exit (2);
-                }
-
-                int i;
-                for (i = 0; 1; i++)
-                {
-                    int j;
-
-                    // Have we gone over our line allocation? 
-                    if (i >= lines_allocated)
-                    {
-                        int new_size;
-
-                        new_size = lines_allocated * 2;
-                        test_words = (char **) realloc (test_words, sizeof (char *) * new_size);
-                        if (test_words == NULL)
-                        {
-                            fprintf (stderr, "Out of memory.\n");
-                            exit (3);
-                        }
-                        lines_allocated = new_size;
-                    }
-                    test_words[i] = malloc (max_line_len);
-                    if (test_words[i] == NULL)
-                    {
-                        fprintf (stderr, "Out of memory (3).\n");
-                        exit (4);
-                    }
-                    if (fgets (test_words[i], max_line_len - 1, fp) == NULL)
-                        break;
-
-                    // Get rid of CR or LF at end of line 
-                    for (j = strlen (test_words[i]) - 1; j >= 0 && (test_words[i][j] == '\n' || test_words[i][j] == '\r'); j--);
-                    test_words[i][j + 1] = '\0';
-                }
-                fclose (fp);
-
-
-                // Load in words
-                //              WORDS truths;
-
-                printf ("Reading input files ");
-                read_all_files(words);
-
-                iters = 0;
-                int rand1, rand2;
-
-
-                // The basic searchs below are too lightweight- adding threads above 1 for basic searches actually slows things down.
-                // N threads > 1 is only useful for very deep searches - i.e. large truths.txt files with large numbers of sub entities.
-
-#pragma omp parallel private(nthreads, tid, iters, rand1, rand2)
-                {                   // Start parallel region
-
-                    tid = omp_get_thread_num ();
-                    //     printf("Hello from thread = %d\n", tid);
-
-#pragma omp barrier
-                    if (tid == 0)
-                    {
-                        nthreads = omp_get_num_threads ();
-                        printf ("Number of threads = %d\n", nthreads);
-                    }
-
-#pragma omp barrier
-
-                    if (tid == 0)
-                    {
-                        if (cores == 0)
-                            iterations = iterations / CORES;
-                        else
-                            iterations = iterations / cores;
-
-                        printf ("Running %ld iterations \n", iterations);
-                    }
-
-#pragma omp barrier
-
-
-                    while (iters++ < iterations)
-                    {
-                        rand1 = rand () % 354000;
-                        rand2 = rand () % 354000;
-
-                        begin = time (NULL);
-
-                        //              printf("Thread: %d - Testing test_words[%s] and test_words[%s] \n",tid,test_words[rand1],test_words[rand2]);
-
-                        nth_order = 1;
-                        ret = word_search (words, nth_order, FULL, test_words[rand1], test_words[rand2]);
-
-                        nth_order = 2;
-                        ret = word_search (words, nth_order, FULL, test_words[rand1], test_words[rand2]);
-
-                    }
-
-                }                   // End paralllel region
-
-                for (; i >= 0; i--)
-                    free (test_words[i]);
-                free (test_words);
-
-                end = time (NULL);
-                printf ("The Benchmark took %f wall clock seconds to complete.\n\n", difftime (end, begin));
-
-                break;
-
-
-            case 'c':              // Create an o/p file
-                if (argc != 4)
-                {
-                    printf ("Create input file: Usage -c inum_lines words_file\n");
-                    exit (1);
-                }
-
-                // Create a new input words file comprising n lines of random alpha numeric strings
-
-                if (sscanf (optarg, "%ld", &intvar) != 1)
-                {
-                    printf ("Error - %s is not an integer", optarg);
-                    exit (1);
-                }
-                begin = time (NULL);
-
-                ret = create_in_txt (intvar, argv[3]);
-
-                end = time (NULL);
-                if (ret != 0)
-                    printf ("The Entity generation failed \n");
-                else
-                    printf ("The Entity generation took %f wall clock seconds to complete.\n\n", difftime (end, begin));
-
-                break;
-
-            case 'o':
-                if (argc != 3)
-                {
-                    printf ("Output into format: Usage -o input_file\n");
-                    exit (1);
-                }
-
-                //  Load the truths words file and write out into 3 formats
-                begin = time (NULL);
-
-                printf ("Reading input file %s\n", optarg);
-                ret = load (words, optarg, TRUTHS);
-
-                end = time (NULL);
-                printf ("The Entity generation took %f seconds to complete.\n\n", difftime (end, begin));
-
-
-                if ((ret) == WORDS_SUCCESS)
-                {
-                    begin = time (NULL);
-
-                    dump_json (words,"data/entities.json");
-                    dump_formatted (words);
-                    dump_txt (words);
-
-                    end = time (NULL);
-                    printf ("Writing the data out took %f seconds to complete.\n\n", difftime (end, begin));
-
-                }
-                else
-                {
-                    printf ("The entity generation failed. \n");
-                    exit (1);
-                }
-
-                break;
-
-            case 's':
-                if (argc != 5)
-                {
-                    printf ("Usage -s nth_order<1|2> entity1 entity2\n");
-                    exit (1);
-                }
-
-                // Read in the words file and search for 2 strings - if there a common word between them ?
-                if (sscanf (optarg, "%ld", &nth_order) != 1)
-                {
-                    printf ("Error %s is not an integer", optarg);
-                    exit (1);
-                }
-
-                // Load in words
-                begin = time (NULL);
-                printf ("Reading input file\n" );
-                ret = read_file(words,truths);
-                end = time (NULL);
-                printf ("The Entity generation took %f seconds to complete.\n\n", difftime (end, begin));
-
-                // Now search
-                begin = time (NULL);
-
-                // Choose QUICK or FULL scans
-                ret = word_search (words, nth_order, FULL, argv[3], argv[4]);
-                end = time (NULL);
-                printf ("Writing the data out took %f seconds to complete.\n\n", difftime (end, begin));
-
-                if (ret == 0)
-                    printf ("The nth order search failed \n");
-                else
-                    printf ("The nth order search took %f seconds to complete and found %d matches.\n\n", difftime (end, begin), ret);
-
-                break;
-
-
-            case 't':
-
-                if (argc != 3)
-                {
-                    printf ("Usage -t input_file | input_directory\n");
-                    exit (1);
-                }
-
-                // Check whether the specifier is a file or directory
-                struct stat s;
-                int err = stat(optarg, &s);
-
-                if(-1 == err) {
-                    if(ENOENT == errno) {
-                        printf("%s file or directory does not exist\n",optarg);
-                        exit(1);
-                    } else {
-                        perror("stat");
-                        exit(1);
-                    }
-                } else {
-
-                    // If we have a valid file or directory
-                    if(S_ISDIR(s.st_mode)) {
-                        printf("An input directory was detected - scanning files: \n");
-                        d = opendir(optarg);
-
-                        // Now read in the input files from the input dir and process....
-                        if (d)
-                        {
-                            begin = time (NULL);
-                            read_all_files(words);
-
-                            // for each file in the directory...
-                            int num_file=0;
-                            while ((dir = readdir(d)) != NULL)
-                            {
-                                // Get rid of . and ..
-                                if ((strncmp(dir->d_name,".",1) != 0) && (strncmp(dir->d_name,"..",2) != 0))  {
-                                    // Combine OPTARG and d_name as a PATH
-
-                                    dir_path = realloc(dir_path, (strlen(optarg) + strlen("/") + strlen(dir->d_name) + 1) * sizeof(char));
-
-                                    if (!dir_path) {
-                                        printf("Path allocation failed \n");
-                                        exit(1);
-                                    }
-                                    int size_path=sizeof(dir_path);
-                                    memset (dir_path, '\0', size_path);
-                                    strcat(dir_path, optarg);
-                                    strcat(dir_path, "/");
-                                    strcat(dir_path, dir->d_name);
-
-                                    printf("Scanning input file %d: %s\n", ++num_file,dir_path);
-                                    scan_file(words,dir_path);
-                                }
-                            }
-
-                            closedir(d);
-                            end = time (NULL);
-                        }
-                        printf ("Processing the input directory took %f seconds to complete.\n\n", difftime (end, begin));
-
-                        printf("\nThe total number of words found were %ld \n",total_found_count);
-                        printf("The total number of words NOT found were %ld \n",total_not_found_count);
-
-                        begin = time (NULL);
-
-                        dump_json (words,"data/entities.json");
-                        dump_formatted (words);
-                        dump_txt (words);
-
-                        end = time (NULL);
-                        printf ("\nWriting the data out took %f seconds to complete.\n\n", difftime (end, begin));
-
-                    } else {
-
-                        // The input file exists so process....
-                        begin = time (NULL);
-                        read_all_files(words);
-
-                        printf("An input file %s was detected; Scanning\n",optarg);
-                        scan_file(words,optarg);
-
-                        end = time (NULL);
-                        printf ("\nProcessing the input file took %f seconds to complete.\n\n", difftime (end, begin));
-
-                        begin = time (NULL);
-
-                        dump_json (words,"data/entities.json");
-                        dump_formatted (words);
-                        dump_txt (words);
-
-                        end = time (NULL);
-                        printf ("\nWriting the data out took %f seconds to complete.\n\n", difftime (end, begin));
-
-                    }
-                }
-
-
-
-                break;
-
-            case '?':
-                fprintf (stderr, "Read input file: Usage <filename>\n");
-                fprintf (stderr, "Run Benchmark: Usage -b iters <threads>\n");
-                fprintf (stderr, "Create input file: Usage -c inum_lines words_file\n");
-                fprintf (stderr, "Output into format: Usage -o input_file\n");
+            } else
+                printf("Benchmark: Usage:  -b iters\n");
+
+            run_benchmark(iters);
+
+            if (daemon == 0) return(0);
+            break;
+
+        case 'c':
+            // Create a new input words file comprising n lines of random alpha numeric strings
+            // Usage -c inum_lines words_file
+            //
+            if (argc != 4)
+            {
+                printf ("Create input file: Usage -c inum_lines words_file\n");
+                exit (1);
+            }
+
+            if (sscanf (argv[2], "%ld", &intvar) != 1)
+            {
+                printf ("Error - %s is not an integer\n", argv[2]);
+                exit (1);
+            }
+            argv[3]=strtok(argv[3], "\n");  // Remove trailing CR
+
+            create_outut_file (intvar,argv[3]);
+
+            if (daemon == 0) return(0);
+            break;
+
+        case 'd':
+            // Daemon mode
+            daemon=1;
+            break;
+
+        case 'h':
+            //Print Help 
+            fprintf (stderr, "Run Benchmark: Usage -b iters\n");
+            fprintf (stderr, "Create input file: Usage -c num_lines words_file\n");
+            fprintf (stderr, "Daemon Mode: Usage -d\n");
+            fprintf (stderr, "Print Help\n");
+            fprintf (stderr, "Output into format: Usage -o file\n");
+            fprintf (stderr, "Read in a file: Usage -r input_file\n");
+            fprintf (stderr, "Search: Usage -s nth_order<1|2> entity1 entity2\n");
+            fprintf (stderr, "Ingest Test file: Usage -t input_file | input_directory\n");
+
+            if (daemon == 0) return(0);
+            break;
+
+        case 'o':
+            // Output into format
+            // Output into format: Usage -o input_file
+            if (argc != 3)
+            {
+                printf ("Output into format: Usage -o input_file\n");
+                exit (1);
+            }
+            argv[2]=strtok(argv[2], "\n");  // Remove trailing CR
+
+            load_truths_and_write (argv[2]);
+
+            if (daemon == 0) return(0);
+            break;
+
+        case 'r':
+            // Read in a file
+            // Read in a file: Usage -r input_file
+            if (argc != 3)
+            {
+                printf ("Usage -r inputfile\n");
+                exit (1);
+            }
+            argv[2]=strtok(argv[2], "\n");  // Remove trailing CR
+
+            read_input_file(argv[2]);
+
+            if (daemon == 0) return(0);
+            break;
+
+        case 's':
+            // Search for an entity connection
+            // Search: Usage -s nth_order<1|2> entity1 entity2
+            if (argc != 5)
+            {
+                printf ("Usage -s nth_order<1|2> entity1 entity2\n");
+                exit (1);
+            }
+            if (sscanf (argv[2], "%d", &order) != 1)
+            {
+                printf ("Error - %s is not an integer\n", argv[2]);
+                exit (1);
+            }
+            if ((order != 1) && (order != 2))
+            {
+                printf ("Error - %s order should be 1 | 2\n", argv[2]);
+                exit (1);
+            }
+            argv[4]=strtok(argv[4], "\n");  // Remove trailing CR
+
+            search_for_words(argv[3], argv[4], order);
+
+            if (daemon == 0) return(0);
+            break;
+
+        case 't':
+            // Ingest Test file
+            // Ingest Test file: Usage -t input_file | input_directory
+            if (argc != 3)
+            {
+                printf ("Usage -t input_file | input_directory\n");
+                exit (1);
+            }
+            argv[2]=strtok(argv[2], "\n");  // Remove trailing CR
+
+            ingest_files(argv[2]);
+
+            if (daemon == 0) return(0);
+            break;
+
+        case 'x':
+            return(0);
+            break;
+
+        case '?':
+                
+                fprintf (stderr, "Invalid Option.\n\n");
+                fprintf (stderr, "Run Benchmark: Usage -b iters\n");
+                fprintf (stderr, "Create input file: Usage -c num_lines words_file\n");
+                fprintf (stderr, "Daemon Mode: Usage -d\n");
+                fprintf (stderr, "Print Help\n");
+                fprintf (stderr, "Output into format: Usage -o file\n");
+                fprintf (stderr, "Read in a file: Usage -r input_file\n");
                 fprintf (stderr, "Search: Usage -s nth_order<1|2> entity1 entity2\n");
                 fprintf (stderr, "Ingest Test file: Usage -t input_file | input_directory\n");
                 exit (1);
 
-            default:
+        default:
+                printf ("No options specified \n");
                 printf ("Aborting \n");
                 abort ();
         }
 
-    if (argc == 1)
-        printf ("Error - no arguments specified \n");
-    else if (argc == 2)
-        for (index = optind; index < argc; index++)
-        {
-            printf ("Reading input file %s\n", argv[index]);
-            ret = load (words, argv[index], TRUTHS);
-            if (ret == WORDS_SUCCESS)
-                printf ("%s read in successfully \n", argv[index]);
-            else
-                printf ("%s  - error on reading \n", argv[index]);
+        if (argc == 1) {
+           printf ("Error - no arguments specified \n");
+           if (daemon == 0) return(0);
         }
 
-    return 0;
+   } // End while
+
+   return(0);
+
 }
 /* vim: set ts=4 sw=4 tw=0 et : */

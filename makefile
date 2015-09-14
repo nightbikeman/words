@@ -80,10 +80,10 @@ test: all
 	@echo PASS
 
 confidence: all 
-	LD_LIBRARY_PATH=. time ./x_hash3 in.txt 
+	LD_LIBRARY_PATH=. time ./x_hash3 -r in.txt 
 	@echo ====================================
 	@echo
-	LD_LIBRARY_PATH=. time ./x_hash3 -b 100  4
+	LD_LIBRARY_PATH=. time ./x_hash3 -b 100 
 	@echo ====================================
 	@echo
 	LD_LIBRARY_PATH=. time ./x_hash3 -c 100 test-txt
@@ -99,12 +99,6 @@ confidence: all
 	@echo ====================================
 	@echo
 	LD_LIBRARY_PATH=. ./x_hash3  -t wiki-extractor/output
-	@echo ====================================
-	@echo
-	LD_LIBRARY_PATH=. time ./x_hash3 -u doc_file
-	@echo ====================================
-	@echo
-	LD_LIBRARY_PATH=. ./x_hash3  -u wiki-extractor/output
 	@echo ====================================
 	@echo
 	LD_LIBRARY_PATH=. ./x_hash3  -h
