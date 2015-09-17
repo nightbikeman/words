@@ -847,8 +847,7 @@ WORDS_STAT is_link(struct entity *e1,struct entity *e2)
     assert(e1 != NULL );
     assert(e2 != NULL );
     if (is_link_one_way(e1,e2) == WORDS_SUCCESS) return WORDS_SUCCESS;
-    if (is_link_one_way(e2,e1) == WORDS_SUCCESS) return WORDS_SUCCESS;
-    return WORDS_FAIL;
+    return is_link_one_way(e2,e1);
 }
 WORDS_STAT update_weight(struct link *l,int weight)
 {
