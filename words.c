@@ -101,6 +101,7 @@ word_type_str (WORD_TYPE type)
 		}
         j = j << 1;
     }
+    assert(strlen(result) < sizeof(result));
     return result;
 }
 
