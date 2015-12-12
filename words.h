@@ -107,7 +107,7 @@ WORD_TYPE  cat_word (const WORDS words, char *word);
 WORDS_STAT dump (const WORDS words);
 WORDS_STAT dump_json (const WORDS words, char *filename);
 WORDS_STAT dump_formatted (const WORDS w);
-WORDS_STAT dump_txt (const WORDS w);
+WORDS_STAT dump_txt (FILE *out,const WORDS w);
 WORDS_STAT word_search (const WORDS w, long nth_order, long quick, char *entity1, char *entity2);
 WORDS_STAT word_search_r (const WORDS w, long nth_order, char *entity1, char *entity2, struct chain *chain);
 int create_in_txt (int num_lines, char *file);

@@ -463,11 +463,10 @@ dump_formatted (const WORDS w)
 }
 
 WORDS_STAT
-dump_txt (const WORDS w)
+dump_txt (FILE *out, const WORDS w)
 {
 
     int j;
-    FILE *out;
     WORDS_IMPL *words;
     // make the pointer non-opaque
     words = (WORDS_IMPL *) w;
@@ -476,8 +475,6 @@ dump_txt (const WORDS w)
     struct hash_iter_context_t *iter;
     iter = new_hash_iter_context (words->table);
     hash_entry_t *entry;
-
-    out = fopen ("data/entities.txt", "wb");
 
     while ((entry = iter->next (iter)) != NULL)
     {
@@ -488,14 +485,12 @@ dump_txt (const WORDS w)
             fprintf (out, "%s %d", data->name, data->num_links);
 
             for (j = 0; j < data->num_links; j++)
-                fprintf (out, ",%s", data->links[j].entity->name);
+                fprintf (out, ",(%s,%s,%d)", data->links[j].entity->name,data->links[j].relation->name,data->links[j].weight);
 
             fprintf (out, "\n");
         }
     }
     free (iter);
-
-    fclose (out);
 
     return (WORDS_SUCCESS);
 }
@@ -542,23 +537,23 @@ traverse_tree(entity *seed,entity *target,int depth,const int max_depth,const in
 WORDS_STAT
 word_search_r (const WORDS w, long nth_order, char *entity1, char *entity2, struct chain *chain)
 {
-	WORDS_STAT ret = WORDS_FAIL;
+    WORDS_STAT ret = WORDS_FAIL;
     WORDS_IMPL *words;
     // make the pointer non-opaque
     words = (WORDS_IMPL *) w;
-	static int mark=0;
+    static int mark=0;
 
-	mark ++;
-	entity *found_entity1 = find_entity (entity1, words->table);
-	if ( found_entity1 != NULL )
-	{
-		entity *found_entity2 = find_entity (entity2, words->table);
-		if ( found_entity2 != NULL )
-		{
-			ret = traverse_tree(found_entity1,found_entity2,0,nth_order,mark,chain);
-		}
-	}
-	return ret;
+    mark ++;
+    entity *found_entity1 = find_entity (entity1, words->table);
+    if ( found_entity1 != NULL )
+    {
+        entity *found_entity2 = find_entity (entity2, words->table);
+        if ( found_entity2 != NULL )
+        {
+            ret = traverse_tree(found_entity1,found_entity2,0,nth_order,mark,chain);
+        }
+    }
+    return ret;
 }
 
 WORDS_STAT

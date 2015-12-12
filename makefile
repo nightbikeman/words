@@ -1,7 +1,7 @@
 .PHONY: clean
 # This is a test
 
-TARGETS= x_hash3.o libxhash3.so x_hash3 find_connection find_word classify_word delete_link test_direct_link dump_json  html/data.json
+TARGETS= x_hash3.o libxhash3.so x_hash3 find_connection find_word classify_word delete_link test_direct_link dump_json  dump_txt html/data.json
 all: $(TARGETS)
 
 clean:
@@ -18,7 +18,7 @@ x_hash: x_hash.o
 x_hash2: LDFLAGS=-lhiredis
 x_hash2: x_hash2.o
 
-dump_json test_direct_link delete_link find_word find_connection x_hash3 classify_word : LDFLAGS=-L. -lxhash3  -ldhash -fopenmp  -g
+dump_txt dump_json test_direct_link delete_link find_word find_connection x_hash3 classify_word : LDFLAGS=-L. -lxhash3  -ldhash -fopenmp  -g
 x_hash3: run_words.o 
 
 words.o x_hash3.o:CPPFLAGS=-g -fPIC -fopenmp $(DEBUG) -Wall

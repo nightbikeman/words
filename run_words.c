@@ -257,7 +257,10 @@ int load_truths_and_write (char *file)
 
                 dump_json (words,"data/entities.json");
                 dump_formatted (words);
-                dump_txt (words);
+                FILE *out = fopen("data/entities.txt","w");
+                if (out == NULL) exit(1);
+                dump_txt (out, words);
+                fclose(out);
 
                 end = time (NULL);
                 printf ("Writing the data out took %f seconds to complete.\n\n", difftime (end, begin));
@@ -391,7 +394,10 @@ int ingest_files(char *path)
 
                     dump_json (words,"data/entities.json");
                     dump_formatted (words);
-                    dump_txt (words);
+                    FILE *out = fopen("data/entities.txt","w");
+                    if (out == NULL) exit(1);
+                    dump_txt (out,words);
+                    fclose(out);
 
                     end = time (NULL);
                     printf ("\nWriting the data out took %f seconds to complete.\n\n", difftime (end, begin));
@@ -412,7 +418,10 @@ int ingest_files(char *path)
 
                     dump_json (words,"data/entities.json");
                     dump_formatted (words);
-                    dump_txt (words);
+                    FILE *out = fopen("data/entities.txt","w");
+                    if (out == NULL) exit(1);
+                    dump_txt (out,words);
+                    fclose(out);
 
                     end = time (NULL);
                     printf ("\nWriting the data out took %f seconds to complete.\n\n", difftime (end, begin));
